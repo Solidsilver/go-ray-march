@@ -9,10 +9,10 @@ import (
 type Sphere struct {
 	Center utils.Vec3
 	Rad    float64
-	color  color.Color
+	color  color.RGBA
 }
 
-func NewSphere(pos utils.Vec3, rad float64, color color.Color) Sphere {
+func NewSphere(pos utils.Vec3, rad float64, color color.RGBA) Sphere {
 	return Sphere{pos, rad, color}
 }
 
@@ -23,6 +23,6 @@ func (s Sphere) Dist(pt utils.Vec3) float64 {
 	return vecLen - s.Rad
 }
 
-func (s Sphere) Color() color.Color {
+func (s Sphere) Color() color.RGBA {
 	return s.color
 }

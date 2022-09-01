@@ -3,6 +3,7 @@ package renderer
 import (
 	"image"
 	"image/color"
+	"math"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -32,11 +33,12 @@ type Renderer struct {
 	camera *Camera
 }
 
-func RayMarch(ray Ray, scene Scene) color.Color {
+func RayMarch(ray Ray, scene Scene) color.RGBA {
 	totalDistTraveled := 0.0
 	curPos := utils.NewCopy(ray.origin)
 	totalMin := MAXIMUM_TRACE_DISTANCE
 	var closest drawables.Drawable
+	steps := 0
 
 	// if curPos.Equals(utils.Vec3{X: 0, Y: -5, Z: -29}) {
 	// 	print("hello")
@@ -55,22 +57,31 @@ func RayMarch(ray Ray, scene Scene) color.Color {
 				closest = obj
 			}
 		}
+		distP := minDist * 0.95
+		curPos.Add(*curPos, *utils.NewCopy(ray.dir).Mult(distP))
+		steps++
 
 		if minDist < 0 {
 			return color.RGBA{0, 0, 0, 255}
 		}
 
 		if minDist < MINIMUM_HIT_DISTANCE {
-			return closest.Color()
+			col := closest.Color()
+			darkP := 1 / math.Sqrt(float64(steps))
+			r := uint8(darkP * float64(col.R))
+			g := uint8(darkP * float64(col.G))
+			b := uint8(darkP * float64(col.B))
+			// newA := darkP * float64(a)
+
+			return color.RGBA{r, g, b, col.A}
 			// return color.RGBA{100, 200, 200, 255}
 		}
 
-		distP := minDist * 0.95
 		totalDistTraveled += distP
 		if minDist < totalMin {
 			totalMin = minDist
 		}
-		curPos.Add(*curPos, *utils.NewCopy(ray.dir).Mult(distP))
+
 	}
 	// distPercet := MINIMUM_HIT_DISTANCE / totalMin
 	// clr := 255 * distPercet
@@ -129,9 +140,10 @@ func Render(renderer Renderer, workers int) {
 }
 
 func RenderDefault(workers int) {
-	drawable1 := drawables.NewSphere(utils.Vec3{X: 350, Y: 0, Z: 0}, 300, color.RGBA{100, 200, 200, 255})
-	drawable2 := drawables.NewSphere(utils.Vec3{X: 450, Y: -100, Z: 20}, 400, color.RGBA{252, 102, 11, 204})
-	cam := NewCamera(utils.Vec3{X: 0, Y: 0, Z: 0}, 1920, 1080)
+	drawable1 := drawables.NewSphere(utils.Vec3{X: 350, Y: 200, Z: 0}, 200, color.RGBA{100, 200, 200, 255})
+	drawable2 := drawables.NewSphere(utils.Vec3{X: 450, Y: -100, Z: -200}, 300, color.RGBA{252, 102, 11, 204})
+	// cam := NewCamera(utils.Vec3{X: 0, Y: 0, Z: 0}, 1920, 1080)
+	cam := NewCamera(utils.Vec3{X: 0, Y: 0, Z: 0}, 3840, 2160)
 	renderer := Renderer{
 		Scene{[]drawables.Drawable{drawable1, drawable2}},
 		cam,
