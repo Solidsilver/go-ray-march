@@ -38,8 +38,8 @@ func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
 	// cam.centerOffset = cam.centerOffset.Add(Point{int(cam.Pos.X)})
 	// cam.w2 = cam.SizeX / 2
 	// cam.h2 = cam.SizeY / 2
-	cam.fov = 43.6
-	cam.fovVert = 29.9
+	cam.fov = 50
+	cam.fovVert = (cam.fov / float64(sizeX)) * float64(sizeY)
 	return cam
 }
 

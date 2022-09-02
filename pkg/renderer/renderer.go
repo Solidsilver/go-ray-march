@@ -61,9 +61,9 @@ func RayMarch(ray *Ray, scene *Scene) color.RGBA {
 		curPos.Add(*curPos, *utils.NewCopy(ray.dir).Mult(distP))
 		steps++
 
-		// if minDist < 0 {
-		// 	return color.RGBA{0, 0, 0, 255}
-		// }
+		if minDist < 0 {
+			return color.RGBA{0, 0, 0, 255}
+		}
 
 		if minDist < MINIMUM_HIT_DISTANCE {
 			_, distF := math.Modf(totalDistTraveled)
@@ -224,12 +224,12 @@ func RenderDefault(workers int) {
 	drawable2 := drawables.NewSphere(utils.Vec3{X: 850, Y: -100, Z: -200}, 300, color.RGBA{252, 102, 11, 255})
 	drawable3 := drawables.NewSphere(utils.Vec3{X: 2000, Y: 0, Z: 0}, 400, color.RGBA{76, 96, 218, 255})
 	drawable4 := drawables.NewSphere(utils.Vec3{X: 200, Y: 400, Z: 400}, 60, color.RGBA{1, 123, 6, 255})
-	cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 1920, 1080) // 1080p
-	// cam := NewCamera(utils.Vec3{X: 0, Y: 0, Z: 0}, 3840, 2160) // 4k
-	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 7680, 4320) // 8k
+	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 1920, 1080) // 1080p
+	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 3840, 2160) // 4k
+	cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 7680, 4320) // 8k
 	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 15360, 8640) // 16k
 
-	// cam := NewCamera(utils.Vec3{X: -100, Y: 0, Z: 0}, 2000, 2000)
+	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 3600, 2400)
 
 	renderer := Renderer{
 		Scene{[]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}},
