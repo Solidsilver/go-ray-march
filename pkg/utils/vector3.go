@@ -45,13 +45,13 @@ func (v Vec3) Equals(v1 Vec3) bool {
 	return v.X == v1.X && v.Y == v1.Y && v.Z == v1.Z
 }
 
-// /*
-// Adds v1 to v2 and returns the result as a newly allocated vector.
-// */
-// func NewAdd(v1, v2 Vec3) *Vec3 {
-// 	v := new(Vec3)
-// 	return v.Add(v1, v2)
-// }
+/*
+Adds v1 to v2 and returns the result as a newly allocated vector.
+*/
+func NewAdd(v1, v2 Vec3) *Vec3 {
+	v := new(Vec3)
+	return v.Add(v1, v2)
+}
 
 /*
 Subtracts v1 from v2 and saves the result to the current vector.
@@ -111,4 +111,13 @@ func NewCopy(v1 Vec3) *Vec3 {
 	v.Y = v1.Y
 	v.Z = v1.Z
 	return v
+}
+
+func (v *Vec3) Unit() *Vec3 {
+	vNorm := v.Norm()
+	return v.Div(vNorm)
+}
+
+func (v Vec3) NewUnit() Vec3 {
+	return *v.Unit()
 }
