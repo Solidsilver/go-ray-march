@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"math/rand"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -11,7 +12,7 @@ import (
 	"solidsilver.dev/go-ray-marching/pkg/utils"
 )
 
-const MINIMUM_HIT_DISTANCE = 0.005
+const MINIMUM_HIT_DISTANCE = 0.01
 const MAXIMUM_TRACE_DISTANCE = 10000.0
 
 type Ray struct {
@@ -57,7 +58,7 @@ func RayMarch(ray *Ray, scene *Scene) color.RGBA {
 				closest = obj
 			}
 		}
-		distP := minDist * 0.995
+		distP := minDist * (1 - MINIMUM_HIT_DISTANCE)
 		curPos.Add(*curPos, *utils.NewCopy(ray.dir).Mult(distP))
 		steps++
 
@@ -66,9 +67,10 @@ func RayMarch(ray *Ray, scene *Scene) color.RGBA {
 		}
 
 		if minDist < MINIMUM_HIT_DISTANCE {
-			_, distF := math.Modf(totalDistTraveled)
+			// _, distF := math.Modf(totalDistTraveled / float64(steps))
 			col := closest.Color()
-			stepsFl := float64(steps) + distF
+			noise := (rand.Float64() - 0.5) * 3
+			stepsFl := float64(steps) + /*(distF)*/ +noise
 			// print(stepsFl)
 			darkP := (1 / math.Sqrt(stepsFl+16)) * 4
 			r := uint8(darkP * float64(col.R))
@@ -111,9 +113,9 @@ func RayMarchWorker2(rayJobs <-chan *Point, scene *Scene, cam *Camera, image *im
 	ray := new(Ray)
 	for job := range rayJobs {
 		// log.Info().Msg("Worker got job")
-		if job.X == 486 && job.Y == 302 {
-			print("hello")
-		}
+		// if job.X == 486 && job.Y == 302 {
+		// 	print("hello")
+		// }
 		cam.RayForPixel2(job, ray)
 		pxColorVal := RayMarch(ray, scene)
 		// log.Info().Msg("Worker got job")
@@ -123,50 +125,42 @@ func RayMarchWorker2(rayJobs <-chan *Point, scene *Scene, cam *Camera, image *im
 	// log.Info().Msg("Worker: No more jobs, wg.Done()")
 }
 
+func RayMarchWorker3(id int, workers int, scene *Scene, cam *Camera, image *image.RGBA, wg *sync.WaitGroup) {
+	defer wg.Done()
+	ray := new(Ray)
+	for i := id; i <= cam.SizeX; i += workers {
+		for j := 0; j <= cam.SizeY; j++ {
+			pt := Point{i, j}
+			cam.RayForPixel2(&pt, ray)
+			pxColorVal := RayMarch(ray, scene)
+			// log.Info().Msg("Worker got job")
+
+			image.Set(pt.X, pt.Y, pxColorVal)
+		}
+	}
+}
+
 func Render(renderer Renderer, workers int) {
 	cam := renderer.camera
-	jobCount := 10000
+	// jobCount := 10000
 	// jobChan := make(chan RayJob, jobCount)
-	jobChan := make(chan *Point, jobCount)
+	// jobChan := make(chan *Point, jobCount)
 	wg := new(sync.WaitGroup)
 
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go RayMarchWorker2(jobChan, &renderer.scene, renderer.camera, cam.Image, wg)
+		// go RayMarchWorker2(jobChan, &renderer.scene, renderer.camera, cam.Image, wg)
+		go RayMarchWorker3(i, workers, &renderer.scene, renderer.camera, cam.Image, wg)
 	}
 
-	// center := Point{cam.SizeX / 2, cam.SizeY / 2}
-	// QueueJobs(jobChan, center, *renderer.camera, workers)
 	// for i := 0; i <= cam.SizeX; i++ {
 	// 	for j := 0; j < cam.SizeY; j++ {
-	// 		camPosI := i - center.X
-	// 		camPosJ := j - center.Y
-	// 		// rayPos := cam.Pos.Add(cam.Pos, utils.Vec3{X: 0, Y: float64(camPosJ), Z: float64(camPosI)})
-	// 		rayPos := utils.Vec3{X: 0, Y: float64(camPosJ), Z: float64(camPosI)}
-	// 		rayPos.Add(rayPos, cam.Pos)
-	// 		// rayPos := utils.Vec3{X: 0, Y: float64(j), Z: float64(i)}
-	// 		// log.Info().Msgf("i: %v, j: %v, cpI: %v, cpJ: %v, rayPos: %v", i, j, camPosI, camPosJ, rayPos)
-	// 		ray := Ray{rayPos, cam.Dir}
-	// 		rayJob := RayJob{ray, Point{i, j}}
-	// 		jobChan <- rayJob
+	// 		pt := Point{i, j}
+	// 		jobChan <- &pt
 	// 	}
 	// }
-	// totalPx := cam.SizeX * cam.SizeY
-
-	// for i := 0; i < totalPx; i++ {
-	// 	x := i % cam.SizeX
-	// 	y := i / cam.SizeX
-	// 	jobChan <- Point{x, y}
-	// }
-
-	for i := 0; i <= cam.SizeX; i++ {
-		for j := 0; j < cam.SizeY; j++ {
-			pt := Point{i, j}
-			jobChan <- &pt
-		}
-	}
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
-	close(jobChan)
+	// close(jobChan)
 
 	wg.Wait()
 
@@ -225,9 +219,9 @@ func RenderDefault(workers int) {
 	drawable3 := drawables.NewSphere(utils.Vec3{X: 2000, Y: 0, Z: 0}, 400, color.RGBA{76, 96, 218, 255})
 	drawable4 := drawables.NewSphere(utils.Vec3{X: 200, Y: 400, Z: 400}, 60, color.RGBA{1, 123, 6, 255})
 	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 1920, 1080) // 1080p
-	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 3840, 2160) // 4k
-	cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 7680, 4320) // 8k
-	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 15360, 8640) // 16k
+	// cam := NewCamera(utils.Vec3{X: -100, Y: 0, Z: 0}, 3840, 2160) // 4k
+	// cam := NewCamera(utils.Vec3{X: -100, Y: 0, Z: 0}, 7680, 4320) // 8k
+	cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 15360, 8640) // 16k
 
 	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 3600, 2400)
 

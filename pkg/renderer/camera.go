@@ -26,9 +26,9 @@ func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
 	// Camera{pos, utils.Vec3UnitX(), sizeX, sizeY, bgImg, 0}
 	cam.Pos = pos
 	cam.Dir = utils.Vec3UnitX()
-	yP := utils.NewCopy(utils.Vec3UnitY())
-	yP.Mult(0.12)
-	cam.Dir.Add(*yP, cam.Dir)
+	// yP := utils.NewCopy(utils.Vec3UnitY())
+	// yP.Mult(0.12)
+	// cam.Dir.Add(*yP, cam.Dir)
 	// cam.Dir.Add(utils.Vec3UnitY(), cam.Dir)
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
@@ -38,7 +38,7 @@ func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
 	// cam.centerOffset = cam.centerOffset.Add(Point{int(cam.Pos.X)})
 	// cam.w2 = cam.SizeX / 2
 	// cam.h2 = cam.SizeY / 2
-	cam.fov = 50
+	cam.fov = 60
 	cam.fovVert = (cam.fov / float64(sizeX)) * float64(sizeY)
 	return cam
 }
@@ -60,7 +60,7 @@ func (c *Camera) RayForPixel(px *Point, ray *Ray) {
 	relPxPos := px.Sub(c.centerOffset)
 	// rayPos := utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
 	ray.dir = c.Dir
-	ray.origin.Add(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
+	ray.origin = *utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
 	// return Ray{*rayPos, c.Dir}
 }
 
