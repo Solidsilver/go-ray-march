@@ -6,6 +6,14 @@ type Vec3 struct {
 	X, Y, Z float64
 }
 
+func NewVec(x, y, z float64) *Vec3 {
+	vec := new(Vec3)
+	vec.X = x
+	vec.Y = y
+	vec.Z = z
+	return vec
+}
+
 func Vec3Zero() Vec3 {
 	return Vec3{0, 0, 0}
 }
@@ -51,6 +59,32 @@ Adds v1 to v2 and returns the result as a newly allocated vector.
 func NewAdd(v1, v2 Vec3) *Vec3 {
 	v := new(Vec3)
 	return v.Add(v1, v2)
+}
+
+func (v *Vec3) Plus(num float64) *Vec3 {
+	v.X += num
+	v.Y += num
+	v.Z += num
+	return v
+}
+
+func NewPlus(v1 Vec3, num float64) Vec3 {
+	return Vec3{
+		v1.X + num,
+		v1.Y + num,
+		v1.Z + num,
+	}
+}
+
+func (v *Vec3) Minus(num float64) *Vec3 {
+	v.X -= num
+	v.Y -= num
+	v.Z -= num
+	return v
+}
+
+func NewMinus(v1 Vec3, num float64) Vec3 {
+	return NewPlus(v1, num*-1)
 }
 
 /*
@@ -120,4 +154,15 @@ func (v *Vec3) Unit() *Vec3 {
 
 func (v Vec3) NewUnit() Vec3 {
 	return *v.Unit()
+}
+
+func Angle(v1 Vec3, v2 Vec3) float64 {
+	return RadToDeg(math.Acos(Dot(v1, v2) / (v1.Norm() * v2.Norm())))
+}
+
+func DirFromPos(p1 Vec3, p2 Vec3) Vec3 {
+	dir := new(Vec3)
+	dir.Sub(p1, p2)
+	dir.Unit()
+	return *dir
 }

@@ -38,7 +38,7 @@ func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
 	// cam.centerOffset = cam.centerOffset.Add(Point{int(cam.Pos.X)})
 	// cam.w2 = cam.SizeX / 2
 	// cam.h2 = cam.SizeY / 2
-	cam.fov = 60
+	cam.fov = 45
 	cam.fovVert = (cam.fov / float64(sizeX)) * float64(sizeY)
 	return cam
 }
@@ -80,7 +80,8 @@ func (c *Camera) RayForPixel2(px *Point, ray *Ray) {
 	dirVec := utils.Vec3{X: 0, Y: vecX.X, Z: vecY.X}
 
 	// rayPos := utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
-	ray.dir = *utils.NewAdd(c.Dir, dirVec)
+	// ray.dir = *utils.NewAdd(c.Dir, dirVec)
+	ray.dir.Add(c.Dir, dirVec)
 	ray.origin = c.Pos
 	// ray.origin.Add(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
 	// return Ray{*rayPos, c.Dir}

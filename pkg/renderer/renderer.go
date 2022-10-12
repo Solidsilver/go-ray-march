@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 	"math"
-	"math/rand"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -12,88 +11,19 @@ import (
 	"solidsilver.dev/go-ray-marching/pkg/utils"
 )
 
-const MINIMUM_HIT_DISTANCE = 0.01
+const MINIMUM_HIT_DISTANCE = 0.05
 const MAXIMUM_TRACE_DISTANCE = 10000.0
+
+// const COL_TRANSP = color.RGBA{0, 0, 0, 0}
 
 type Ray struct {
 	origin utils.Vec3
 	dir    utils.Vec3
 }
 
-type RayJob struct {
-	ray Ray
-	pos Point
-}
-
-type Scene struct {
-	Drawables []drawables.Drawable
-}
-
 type Renderer struct {
-	scene  Scene
+	scene  *Scene
 	camera *Camera
-}
-
-func RayMarch(ray *Ray, scene *Scene) color.RGBA {
-	totalDistTraveled := 0.0
-	curPos := utils.NewCopy(ray.origin)
-	totalMin := MAXIMUM_TRACE_DISTANCE
-	var closest drawables.Drawable
-	steps := 0
-
-	// if curPos.Equals(utils.Vec3{X: 0, Y: -5, Z: -29}) {
-	// 	print("hello")
-	// }
-
-	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
-
-		minDist := MAXIMUM_TRACE_DISTANCE
-		for _, obj := range scene.Drawables {
-			dist := obj.Dist(*curPos)
-			// if dist < MINIMUM_HIT_DISTANCE*2 {
-			// 	print("hello")
-			// }
-			if dist < minDist {
-				minDist = dist
-				closest = obj
-			}
-		}
-		distP := minDist * (1 - MINIMUM_HIT_DISTANCE)
-		curPos.Add(*curPos, *utils.NewCopy(ray.dir).Mult(distP))
-		steps++
-
-		if minDist < 0 {
-			return color.RGBA{0, 0, 0, 255}
-		}
-
-		if minDist < MINIMUM_HIT_DISTANCE {
-			// _, distF := math.Modf(totalDistTraveled / float64(steps))
-			col := closest.Color()
-			noise := (rand.Float64() - 0.5) * 3
-			stepsFl := float64(steps) + /*(distF)*/ +noise
-			// print(stepsFl)
-			darkP := (1 / math.Sqrt(stepsFl+16)) * 4
-			r := uint8(darkP * float64(col.R))
-			g := uint8(darkP * float64(col.G))
-			b := uint8(darkP * float64(col.B))
-			// newA := darkP * float64(a)
-
-			return color.RGBA{r, g, b, col.A}
-			// return color.RGBA{100, 200, 200, 255}
-		}
-
-		totalDistTraveled += distP
-		if minDist < totalMin {
-			totalMin = minDist
-		}
-
-	}
-	// distPercet := MINIMUM_HIT_DISTANCE / totalMin
-	// clr := 255 * distPercet
-	// fmt.Println(clr)
-	// return color.RGBA{100, 200, 200, uint8(clr)}
-	return color.RGBA{0, 0, 0, 0}
-
 }
 
 // func RayMarchWorker(rayJobs <-chan RayJob, scene Scene, image *image.RGBA, wg *sync.WaitGroup) {
@@ -112,69 +42,120 @@ func RayMarchWorker2(rayJobs <-chan *Point, scene *Scene, cam *Camera, image *im
 	defer wg.Done()
 	ray := new(Ray)
 	for job := range rayJobs {
-		// log.Info().Msg("Worker got job")
-		// if job.X == 486 && job.Y == 302 {
-		// 	print("hello")
-		// }
 		cam.RayForPixel2(job, ray)
-		pxColorVal := RayMarch(ray, scene)
-		// log.Info().Msg("Worker got job")
+		// pxColorVal := RayMarch(ray, scene)
 
-		image.Set(job.X, job.Y, pxColorVal)
+		// image.Set(job.X, job.Y, pxColorVal)
 	}
-	// log.Info().Msg("Worker: No more jobs, wg.Done()")
 }
 
-func RayMarchWorker3(id int, workers int, scene *Scene, cam *Camera, image *image.RGBA, wg *sync.WaitGroup) {
+func RayMarchWorker3(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
 	defer wg.Done()
 	ray := new(Ray)
-	for i := id; i <= cam.SizeX; i += workers {
-		for j := 0; j <= cam.SizeY; j++ {
+	iter := uint32(id)
+	for i := id; i <= renderer.camera.SizeX; i += workers {
+		for j := 0; j <= renderer.camera.SizeY; j++ {
 			pt := Point{i, j}
-			cam.RayForPixel2(&pt, ray)
-			pxColorVal := RayMarch(ray, scene)
+			renderer.camera.RayForPixel2(&pt, ray)
+			rslt := utils.LGCRandDec(iter, 100000)
+			iter = rslt.Iter
+			pxColorVal := RayMarch(ray, renderer.scene, rslt.Rnd)
 			// log.Info().Msg("Worker got job")
 
-			image.Set(pt.X, pt.Y, pxColorVal)
+			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		}
 	}
 }
 
-func Render(renderer Renderer, workers int) {
-	cam := renderer.camera
-	// jobCount := 10000
-	// jobChan := make(chan RayJob, jobCount)
-	// jobChan := make(chan *Point, jobCount)
+func RayMarchWorker4(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
+	defer wg.Done()
+	ray := new(Ray)
+	for i := id; i <= renderer.camera.SizeX; i += workers {
+		for j := 0; j <= renderer.camera.SizeY; j++ {
+			pt := Point{i, j}
+			renderer.camera.RayForPixel2(&pt, ray)
+			marchRslt := RayMarch2(ray, renderer.scene)
+			lightHits := make([]float64, 0)
+			pxColorVal := color.RGBA{0, 0, 0, 255}
+			if marchRslt.HitObject != nil {
+				// if marchRslt.HitObject.ID() == "d2" {
+				// 	print("hitd2")
+				// }
+				// pxColorVal = color.RGBA{255, 255, 255, 255}
+				hitPoint := marchRslt.HitPos
+				pxColorVal = marchRslt.HitObject.Color()
+				for _, lSource := range renderer.scene.Lights {
+					dir := new(utils.Vec3)
+					dir.Sub(lSource.Pos(), hitPoint)
+					dir.Unit()
+					surfaceNormal := SurfaceNormal(hitPoint, marchRslt.HitObject)
+					// bounceDeg := 180 - utils.Angle(*dir, utils.DirFromPos(hitPoint, renderer.camera.Dir))
+					bounceDeg := math.Min(90.0, utils.Angle(*dir, surfaceNormal))
+					ray := Ray{hitPoint, *dir}
+					rslt := RayMarch2(&ray, renderer.scene)
+					if drawables.Equals(rslt.HitObject, lSource) {
+						// if bounceDeg > 40 {
+						// 	print("hello")
+						// }
+						brightness := float64(rslt.HitObject.Color().A)
+						brightness = brightness * (90 - bounceDeg) / 90
+						lightHits = append(lightHits, brightness)
+						// pxColorVal = color.RGBA{
+						// 	R: min(255, pxColorVal.R *
+						// }
+					}
+					// else {
+					// 	brightness := 20.0
+					// 	lightHits = append(lightHits, brightness)
+					// }
+
+					//march ray to light
+				}
+
+				sumBright := 0.0
+				for _, lHit := range lightHits {
+					sumBright += lHit
+				}
+				avgBright := sumBright // float64(len(lightHits))
+
+				pxColorVal = color.RGBA{
+					R: uint8(math.Min(255, float64(pxColorVal.R)*(avgBright/255))),
+					G: uint8(math.Min(255, float64(pxColorVal.G)*(avgBright/255))),
+					B: uint8(math.Min(255, float64(pxColorVal.B)*(avgBright/255))),
+					A: pxColorVal.A,
+				}
+
+			}
+
+			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
+		}
+	}
+}
+
+func Render(renderer *Renderer, workers int) {
 	wg := new(sync.WaitGroup)
 
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		// go RayMarchWorker2(jobChan, &renderer.scene, renderer.camera, cam.Image, wg)
-		go RayMarchWorker3(i, workers, &renderer.scene, renderer.camera, cam.Image, wg)
+		go RayMarchWorker4(i, workers, renderer, wg)
 	}
 
-	// for i := 0; i <= cam.SizeX; i++ {
-	// 	for j := 0; j < cam.SizeY; j++ {
-	// 		pt := Point{i, j}
-	// 		jobChan <- &pt
-	// 	}
-	// }
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
-	// close(jobChan)
 
 	wg.Wait()
 
 	log.Info().Msg("Workers done, encoding image to path")
 
-	cam.FlushToDisk()
+	renderer.camera.FlushToDisk()
 }
 
-type WorkerPrepJob struct {
-	i, j   int
-	center Point
-	camDir utils.Vec3
-	camPos utils.Vec3
-}
+// type WorkerPrepJob struct {
+// 	i, j   int
+// 	center Point
+// 	camDir utils.Vec3
+// 	camPos utils.Vec3
+// }
 
 // func QueueJobs(rayJobs chan<- RayJob, center Point, cam Camera, workers int) {
 // 	wg := new(sync.WaitGroup)
@@ -214,27 +195,51 @@ type WorkerPrepJob struct {
 // }
 
 func RenderDefault(workers int) {
-	drawable1 := drawables.NewSphere(utils.Vec3{X: 650, Y: 200, Z: 0}, 200, color.RGBA{100, 200, 200, 255})
-	drawable2 := drawables.NewSphere(utils.Vec3{X: 850, Y: -100, Z: -200}, 300, color.RGBA{252, 102, 11, 255})
-	drawable3 := drawables.NewSphere(utils.Vec3{X: 2000, Y: 0, Z: 0}, 400, color.RGBA{76, 96, 218, 255})
-	drawable4 := drawables.NewSphere(utils.Vec3{X: 200, Y: 400, Z: 400}, 60, color.RGBA{1, 123, 6, 255})
-	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 1920, 1080) // 1080p
-	// cam := NewCamera(utils.Vec3{X: -100, Y: 0, Z: 0}, 3840, 2160) // 4k
-	// cam := NewCamera(utils.Vec3{X: -100, Y: 0, Z: 0}, 7680, 4320) // 8k
-	cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 15360, 8640) // 16k
+	drawable1 := drawables.NewNamedSphere("d1", utils.Vec3{X: 6, Y: 2, Z: 0}, 2.5, color.RGBA{100, 200, 200, 255})
+	drawable2 := drawables.NewNamedSphere("d2", utils.Vec3{X: 8, Y: -1, Z: -2}, 3.5, color.RGBA{252, 102, 11, 255})
+	drawable3 := drawables.NewNamedSphere("d3", utils.Vec3{X: 40, Y: 0, Z: 0}, 4.5, color.RGBA{76, 96, 218, 255})
+	drawable4 := drawables.NewNamedSphere("d4", utils.Vec3{X: 2, Y: 4, Z: 4}, 0.9, color.RGBA{1, 123, 6, 255})
+	cam := NewCamera(utils.Vec3{X: -25, Y: 0, Z: 0}, 1920, 1080) // 1080p
+	// cam := NewCamera(utils.Vec3{X: -25, Y: 0, Z: 0}, 3840, 2160) // 4k
+	// cam := NewCamera(utils.Vec3{X: -10, Y: 0, Z: 0}, 7680, 4320) // 8k
+	// cam := NewCamera(utils.Vec3{X: -10, Y: 0, Z: 0}, 15360, 8640) // 16k
+	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 30720, 17280) // 32k
+
+	light1 := drawables.NewNamedSphere("l1", utils.Vec3{X: -30, Y: 0, Z: 0}, 1, color.RGBA{0, 0, 0, 255})
+	light2 := drawables.NewNamedSphere("l2", utils.Vec3{X: 30, Y: 30, Z: 30}, 1, color.RGBA{0, 0, 0, 255})
 
 	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 3600, 2400)
+	scene := NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2})
 
 	renderer := Renderer{
-		Scene{[]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}},
+		scene,
 		cam,
 	}
 
-	Render(renderer, workers)
+	Render(&renderer, workers)
+	// right := utils.Vec3UnitY()
+	// right.Mult(0.5)
+	// back := utils.Vec3UnitX()
+	// back.Mult(0.5)
 
-	// for i := 0; i < 20; i++ {
-	// 	cam.Pos = *cam.Pos.Add(cam.Pos, utils.Vec3UnitX())
-	// 	Render(renderer, workers)
+	// for i := 0; i < 50; i++ {
+	// 	cam.Pos.Add(cam.Pos, right)
+	// 	Render(&renderer, workers)
+	// }
+
+	// for i := 0; i < 50; i++ {
+	// 	cam.Pos.Sub(cam.Pos, back)
+	// 	Render(&renderer, workers)
+	// }
+
+	// for i := 0; i < 50; i++ {
+	// 	cam.Pos.Sub(cam.Pos, right)
+	// 	Render(&renderer, workers)
+	// }
+
+	// for i := 0; i < 50; i++ {
+	// 	cam.Pos.Add(cam.Pos, back)
+	// 	Render(&renderer, workers)
 	// }
 
 }

@@ -1,0 +1,15 @@
+package renderer
+
+import "solidsilver.dev/go-ray-marching/pkg/drawables"
+
+type Scene struct {
+	Drawables []drawables.Drawable
+	Lights    []drawables.Drawable
+}
+
+func NewScene(draws []drawables.Drawable, lights []drawables.Drawable) *Scene {
+	scn := new(Scene)
+	scn.Drawables = draws
+	scn.Lights = lights
+	return scn
+}

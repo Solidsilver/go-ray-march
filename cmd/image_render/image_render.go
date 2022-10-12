@@ -2,11 +2,14 @@ package main
 
 import (
 	"flag"
+	"os"
 
+	"github.com/pkg/profile"
 	"solidsilver.dev/go-ray-marching/pkg/renderer"
 )
 
 func main() {
+	defer profile.Start(profile.ProfilePath(".")).Stop()
 	workersOpt := flag.Int("t", 4, "The number of concurrent jobs being processed")
 	// outDir := flag.String("o", "./", "Folder to output the tiff files")
 	// zoomLvl := flag.Int("z", 17, "Zoom level to create tiles at")
@@ -21,5 +24,7 @@ func main() {
 
 	// utils.SetupLogByLevel(*verboseOpt)
 	// proc_runners.Bulk2Tiles(*inDir, *outDir, *workersOpt, *zoomLvl)
+	os.RemoveAll("../../rend_out")
+	os.Mkdir("../../rend_out", os.ModePerm)
 	renderer.RenderDefault(*workersOpt)
 }
