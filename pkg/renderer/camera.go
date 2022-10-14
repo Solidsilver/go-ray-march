@@ -17,34 +17,50 @@ type Camera struct {
 	frame        int
 	centerOffset Point
 	fov          float64
-	fovVert      float64
+	fov_vRad     float64
+	fov_hRad     float64
+	aspect       float64
 }
 
 func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
 	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
 	cam := new(Camera)
-	// Camera{pos, utils.Vec3UnitX(), sizeX, sizeY, bgImg, 0}
 	cam.Pos = pos
 	cam.Dir = utils.Vec3UnitX()
-	// yP := utils.NewCopy(utils.Vec3UnitY())
-	// yP.Mult(0.12)
-	// cam.Dir.Add(*yP, cam.Dir)
-	// cam.Dir.Add(utils.Vec3UnitY(), cam.Dir)
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
+	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
 	cam.frame = 0
 	cam.Image = bgImg
 	cam.centerOffset = Point{cam.SizeX / 2, cam.SizeY / 2}
-	// cam.centerOffset = cam.centerOffset.Add(Point{int(cam.Pos.X)})
-	// cam.w2 = cam.SizeX / 2
-	// cam.h2 = cam.SizeY / 2
-	cam.fov = 45
-	cam.fovVert = (cam.fov / float64(sizeX)) * float64(sizeY)
+
+	cam.fov = 10
+
+	cam.fov_vRad = utils.DegToRad(cam.fov)
+	cam.fov_hRad = math.Atan(math.Tan(cam.fov_vRad/2.0)*cam.aspect) * 2.0
+	return cam
+}
+
+func NewCameraFOV(pos utils.Vec3, sizeX int, sizeY int, fov float64) *Camera {
+	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
+	cam := new(Camera)
+	cam.Pos = pos
+	cam.Dir = utils.Vec3UnitX()
+	cam.SizeX = sizeX
+	cam.SizeY = sizeY
+	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
+	cam.frame = 0
+	cam.Image = bgImg
+	cam.centerOffset = Point{cam.SizeX / 2, cam.SizeY / 2}
+
+	cam.fov = fov
+	cam.fov_vRad = utils.DegToRad(cam.fov)
+	cam.fov_hRad = math.Atan(math.Tan(cam.fov_vRad/2.0)*cam.aspect) * 2.0
 	return cam
 }
 
 func (c *Camera) FlushToDisk() {
-	imgName := fmt.Sprintf("/Users/solidsilver/Code/go-ray-march/rend_out/render%d.png", c.frame)
+	imgName := fmt.Sprintf("../../rend_out/render%d.png", c.frame)
 	c.frame = c.frame + 1
 	utils.EncodePNGToPath(imgName, c.Image)
 
@@ -67,12 +83,12 @@ func (c *Camera) RayForPixel(px *Point, ray *Ray) {
 func (c *Camera) RayForPixel2(px *Point, ray *Ray) {
 
 	relPxPos := px.Sub(c.centerOffset)
-	fovHalfRad := utils.DegToRad(c.fov / 2)
+	fovHalfRad := c.fov_hRad / 2
 	adjX := float64(c.centerOffset.X) / math.Tan(fovHalfRad)
 	vecX := utils.Vec3{X: float64(relPxPos.X), Y: adjX, Z: 0}
 	vecX.Unit()
 
-	fovYHalfRad := utils.DegToRad(c.fovVert / 2)
+	fovYHalfRad := c.fov_vRad / 2
 	adjY := float64(c.centerOffset.Y) / math.Tan(fovYHalfRad)
 	vecY := utils.Vec3{X: float64(relPxPos.Y), Y: adjY, Z: 0}
 	vecY.Unit()

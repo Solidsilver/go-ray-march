@@ -59,7 +59,7 @@ func RayMarchWorker3(id int, workers int, renderer *Renderer, wg *sync.WaitGroup
 			renderer.camera.RayForPixel2(&pt, ray)
 			rslt := utils.LGCRandDec(iter, 100000)
 			iter = rslt.Iter
-			pxColorVal := RayMarch(ray, renderer.scene, rslt.Rnd)
+			pxColorVal := RayMarchColor(ray, renderer.scene, rslt.Rnd)
 			// log.Info().Msg("Worker got job")
 
 			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
@@ -67,14 +67,14 @@ func RayMarchWorker3(id int, workers int, renderer *Renderer, wg *sync.WaitGroup
 	}
 }
 
-func RayMarchWorker4(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
+func RayMarchWorkerLighting(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
 	defer wg.Done()
 	ray := new(Ray)
 	for i := id; i <= renderer.camera.SizeX; i += workers {
 		for j := 0; j <= renderer.camera.SizeY; j++ {
 			pt := Point{i, j}
 			renderer.camera.RayForPixel2(&pt, ray)
-			marchRslt := RayMarch2(ray, renderer.scene)
+			marchRslt := RayMarch(ray, renderer.scene)
 			lightHits := make([]float64, 0)
 			pxColorVal := color.RGBA{0, 0, 0, 255}
 			if marchRslt.HitObject != nil {
@@ -92,7 +92,7 @@ func RayMarchWorker4(id int, workers int, renderer *Renderer, wg *sync.WaitGroup
 					// bounceDeg := 180 - utils.Angle(*dir, utils.DirFromPos(hitPoint, renderer.camera.Dir))
 					bounceDeg := math.Min(90.0, utils.Angle(*dir, surfaceNormal))
 					ray := Ray{hitPoint, *dir}
-					rslt := RayMarch2(&ray, renderer.scene)
+					rslt := RayMarch(&ray, renderer.scene)
 					if drawables.Equals(rslt.HitObject, lSource) {
 						// if bounceDeg > 40 {
 						// 	print("hello")
@@ -138,7 +138,7 @@ func Render(renderer *Renderer, workers int) {
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		// go RayMarchWorker2(jobChan, &renderer.scene, renderer.camera, cam.Image, wg)
-		go RayMarchWorker4(i, workers, renderer, wg)
+		go RayMarchWorkerLighting(i, workers, renderer, wg)
 	}
 
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
@@ -199,11 +199,11 @@ func RenderDefault(workers int) {
 	drawable2 := drawables.NewNamedSphere("d2", utils.Vec3{X: 8, Y: -1, Z: -2}, 3.5, color.RGBA{252, 102, 11, 255})
 	drawable3 := drawables.NewNamedSphere("d3", utils.Vec3{X: 40, Y: 0, Z: 0}, 4.5, color.RGBA{76, 96, 218, 255})
 	drawable4 := drawables.NewNamedSphere("d4", utils.Vec3{X: 2, Y: 4, Z: 4}, 0.9, color.RGBA{1, 123, 6, 255})
-	cam := NewCamera(utils.Vec3{X: -25, Y: 0, Z: 0}, 1920, 1080) // 1080p
-	// cam := NewCamera(utils.Vec3{X: -25, Y: 0, Z: 0}, 3840, 2160) // 4k
-	// cam := NewCamera(utils.Vec3{X: -10, Y: 0, Z: 0}, 7680, 4320) // 8k
-	// cam := NewCamera(utils.Vec3{X: -10, Y: 0, Z: 0}, 15360, 8640) // 16k
-	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 30720, 17280) // 32k
+	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 1920, 1080, 45) // 1080p
+	cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 3840, 2160, 45) // 4k
+	// cam := NewCameraFOV(utils.Vec3{X: -10, Y: 0, Z: 0}, 7680, 4320, 45) // 8k
+	// cam := NewCameraFOV(utils.Vec3{X: -10, Y: 0, Z: 0}, 15360, 8640, 45) // 16k
+	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 30720, 17280, 45) // 32k
 
 	light1 := drawables.NewNamedSphere("l1", utils.Vec3{X: -30, Y: 0, Z: 0}, 1, color.RGBA{0, 0, 0, 255})
 	light2 := drawables.NewNamedSphere("l2", utils.Vec3{X: 30, Y: 30, Z: 30}, 1, color.RGBA{0, 0, 0, 255})

@@ -15,7 +15,7 @@ type MarchResult struct {
 	Distance  float64
 }
 
-func RayMarch(ray *Ray, scene *Scene, rnd float64) color.RGBA {
+func RayMarchColor(ray *Ray, scene *Scene, rnd float64) color.RGBA {
 	totalDistTraveled := 0.0
 	// curPos := utils.NewCopy(ray.origin)
 	curPos := ray.origin
@@ -86,7 +86,7 @@ func RayMarch(ray *Ray, scene *Scene, rnd float64) color.RGBA {
 
 }
 
-func RayMarch2(ray *Ray, scene *Scene) MarchResult {
+func RayMarch(ray *Ray, scene *Scene) MarchResult {
 	totalDistTraveled := 0.0
 	curPos := ray.origin
 	totalMin := MAXIMUM_TRACE_DISTANCE
@@ -110,13 +110,13 @@ func RayMarch2(ray *Ray, scene *Scene) MarchResult {
 			}
 		}
 
-		distP := minDist * (1 - MINIMUM_HIT_DISTANCE)
-
 		if minDist < 0 || minDist < MINIMUM_HIT_DISTANCE {
 			retPos := utils.NewCopy(curPos)
 			retPos.Sub(*retPos, *utils.NewCopy(ray.dir).Mult(MINIMUM_HIT_DISTANCE))
 			return MarchResult{closest, *retPos, steps, totalDistTraveled}
+			// return MarchResult{closest, curPos, steps, totalDistTraveled}
 		}
+		distP := minDist * (1 - MINIMUM_HIT_DISTANCE)
 
 		curPos.Add(curPos, *utils.NewCopy(ray.dir).Mult(distP))
 		steps++
