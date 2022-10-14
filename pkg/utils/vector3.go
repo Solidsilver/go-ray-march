@@ -14,6 +14,10 @@ func NewVec(x, y, z float64) *Vec3 {
 	return vec
 }
 
+func Vec3Size(n float64) Vec3 {
+	return Vec3{n, n, n}
+}
+
 func Vec3Zero() Vec3 {
 	return Vec3{0, 0, 0}
 }
@@ -32,6 +36,18 @@ func Vec3UnitZ() Vec3 {
 
 func (v *Vec3) Norm() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
+}
+
+func NewNorm(v Vec3) float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
+}
+
+func Vec3Max(v1, v2 Vec3) Vec3 {
+	return Vec3{
+		math.Max(v1.X, v2.X),
+		math.Max(v1.Y, v2.Y),
+		math.Max(v1.Z, v2.Z),
+	}
 }
 
 // func Vec3Len(v Vec3) float64 {
@@ -59,6 +75,14 @@ Adds v1 to v2 and returns the result as a newly allocated vector.
 func NewAdd(v1, v2 Vec3) *Vec3 {
 	v := new(Vec3)
 	return v.Add(v1, v2)
+}
+
+func NewAdd2(v1, v2 Vec3) Vec3 {
+	return Vec3{
+		v1.X + v2.X,
+		v1.Y + v2.Y,
+		v1.Z + v2.Z,
+	}
 }
 
 func (v *Vec3) Plus(num float64) *Vec3 {
@@ -165,4 +189,12 @@ func DirFromPos(p1 Vec3, p2 Vec3) Vec3 {
 	dir.Sub(p1, p2)
 	dir.Unit()
 	return *dir
+}
+
+func Abs(p Vec3) Vec3 {
+	return Vec3{
+		math.Abs(p.X),
+		math.Abs(p.Y),
+		math.Abs(p.Z),
+	}
 }

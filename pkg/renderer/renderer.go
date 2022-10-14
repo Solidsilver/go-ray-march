@@ -198,14 +198,15 @@ func RenderDefault(workers int) {
 	drawable1 := drawables.NewNamedSphere("d1", utils.Vec3{X: 6, Y: 2, Z: 0}, 2.5, color.RGBA{100, 200, 200, 255})
 	drawable2 := drawables.NewNamedSphere("d2", utils.Vec3{X: 8, Y: -1, Z: -2}, 3.5, color.RGBA{252, 102, 11, 255})
 	drawable3 := drawables.NewNamedSphere("d3", utils.Vec3{X: 40, Y: 0, Z: 0}, 4.5, color.RGBA{76, 96, 218, 255})
-	drawable4 := drawables.NewNamedSphere("d4", utils.Vec3{X: 2, Y: 4, Z: 4}, 0.9, color.RGBA{1, 123, 6, 255})
+	// drawable4 := drawables.NewNamedSphere("d4", utils.Vec3{X: 2, Y: 4, Z: 4}, 1, color.RGBA{1, 123, 6, 255})
+	drawable4 := drawables.NewNamedCube("b1", utils.Vec3{X: 2, Y: -4, Z: -4}, 1, color.RGBA{1, 123, 6, 255})
 	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 1920, 1080, 45) // 1080p
 	cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 3840, 2160, 45) // 4k
 	// cam := NewCameraFOV(utils.Vec3{X: -10, Y: 0, Z: 0}, 7680, 4320, 45) // 8k
 	// cam := NewCameraFOV(utils.Vec3{X: -10, Y: 0, Z: 0}, 15360, 8640, 45) // 16k
 	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 30720, 17280, 45) // 32k
 
-	light1 := drawables.NewNamedSphere("l1", utils.Vec3{X: -30, Y: 0, Z: 0}, 1, color.RGBA{0, 0, 0, 255})
+	light1 := drawables.NewNamedSphere("l1", utils.Vec3{X: -30, Y: -30, Z: -30}, 1, color.RGBA{0, 0, 0, 255})
 	light2 := drawables.NewNamedSphere("l2", utils.Vec3{X: 30, Y: 30, Z: 30}, 1, color.RGBA{0, 0, 0, 255})
 
 	// cam := NewCamera(utils.Vec3{X: -1000, Y: 0, Z: 0}, 3600, 2400)

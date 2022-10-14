@@ -22,7 +22,6 @@ func RayMarchColor(ray *Ray, scene *Scene, rnd float64) color.RGBA {
 	totalMin := MAXIMUM_TRACE_DISTANCE
 	var closest drawables.Drawable
 	steps := 0
-	// lastMin := MAXIMUM_TRACE_DISTANCE
 
 	// if curPos.Equals(utils.Vec3{X: 0, Y: -5, Z: -29}) {
 	// 	print("hello")
@@ -114,7 +113,6 @@ func RayMarch(ray *Ray, scene *Scene) MarchResult {
 			retPos := utils.NewCopy(curPos)
 			retPos.Sub(*retPos, *utils.NewCopy(ray.dir).Mult(MINIMUM_HIT_DISTANCE))
 			return MarchResult{closest, *retPos, steps, totalDistTraveled}
-			// return MarchResult{closest, curPos, steps, totalDistTraveled}
 		}
 		distP := minDist * (1 - MINIMUM_HIT_DISTANCE)
 

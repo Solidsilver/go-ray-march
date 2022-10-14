@@ -22,6 +22,12 @@ func SigLocal(dist float64, step int, smooth float64) float64 {
 	return Sig(dist, 1, b, stepF, stepF)
 }
 
+func Max(f1, f2, f3 float64) float64 {
+	return math.Max(f1, math.Max(f2, f3))
+}
+
+// func maxN()
+
 // func Min[T constraints.Ordered](a, b T) T {
 // 	if a < b {
 // 		return a
