@@ -6,11 +6,12 @@ import (
 	"math"
 
 	"solidsilver.dev/go-ray-marching/pkg/utils"
+	"solidsilver.dev/go-ray-marching/pkg/vec3"
 )
 
 type Camera struct {
-	Pos          utils.Vec3
-	Dir          utils.Vec3
+	Pos          vec3.Vec3
+	Dir          vec3.Vec3
 	SizeX        int
 	SizeY        int
 	Image        *image.RGBA
@@ -22,11 +23,11 @@ type Camera struct {
 	aspect       float64
 }
 
-func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
+func NewCamera(pos vec3.Vec3, sizeX int, sizeY int) *Camera {
 	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
 	cam := new(Camera)
 	cam.Pos = pos
-	cam.Dir = utils.Vec3UnitX()
+	cam.Dir = vec3.UnitX()
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
 	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
@@ -34,18 +35,18 @@ func NewCamera(pos utils.Vec3, sizeX int, sizeY int) *Camera {
 	cam.Image = bgImg
 	cam.centerOffset = Point{cam.SizeX / 2, cam.SizeY / 2}
 
-	cam.fov = 10
+	cam.fov = 45
 
 	cam.fov_vRad = utils.DegToRad(cam.fov)
 	cam.fov_hRad = math.Atan(math.Tan(cam.fov_vRad/2.0)*cam.aspect) * 2.0
 	return cam
 }
 
-func NewCameraFOV(pos utils.Vec3, sizeX int, sizeY int, fov float64) *Camera {
+func NewCameraFOV(pos vec3.Vec3, sizeX int, sizeY int, fov float64) *Camera {
 	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
 	cam := new(Camera)
 	cam.Pos = pos
-	cam.Dir = utils.Vec3UnitX()
+	cam.Dir = vec3.UnitX()
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
 	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
@@ -66,41 +67,24 @@ func (c *Camera) FlushToDisk() {
 
 }
 
-func (c Camera) NewRayForPixel(px Point) Ray {
-	relPxPos := px.Sub(c.centerOffset)
-	rayPos := utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
-	return Ray{*rayPos, c.Dir}
-}
-
-func (c *Camera) RayForPixel(px *Point, ray *Ray) {
-	relPxPos := px.Sub(c.centerOffset)
-	// rayPos := utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
-	ray.dir = c.Dir
-	ray.origin = *utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
-	// return Ray{*rayPos, c.Dir}
-}
-
-func (c *Camera) RayForPixel2(px *Point, ray *Ray) {
-
+func (c *Camera) RayForPixel(px Point) Ray {
 	relPxPos := px.Sub(c.centerOffset)
 	fovHalfRad := c.fov_hRad / 2
 	adjX := float64(c.centerOffset.X) / math.Tan(fovHalfRad)
-	vecX := utils.Vec3{X: float64(relPxPos.X), Y: adjX, Z: 0}
-	vecX.Unit()
+	vecX := vec3.Vec3{X: float64(relPxPos.X), Y: adjX, Z: 0}
+	vecX = vecX.Unit()
 
 	fovYHalfRad := c.fov_vRad / 2
 	adjY := float64(c.centerOffset.Y) / math.Tan(fovYHalfRad)
-	vecY := utils.Vec3{X: float64(relPxPos.Y), Y: adjY, Z: 0}
-	vecY.Unit()
+	vecY := vec3.Vec3{X: float64(relPxPos.Y), Y: adjY, Z: 0}
+	vecY = vecY.Unit()
 
-	dirVec := utils.Vec3{X: 0, Y: vecX.X, Z: vecY.X}
+	dirVec := vec3.Vec3{X: 0, Y: vecX.X, Z: vecY.X}
 
-	// rayPos := utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
-	// ray.dir = *utils.NewAdd(c.Dir, dirVec)
-	ray.dir.Add(c.Dir, dirVec)
-	ray.origin = c.Pos
-	// ray.origin.Add(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
-	// return Ray{*rayPos, c.Dir}
+	return Ray{
+		c.Pos,
+		c.Dir.Add(dirVec),
+	}
 }
 
 type Point struct {

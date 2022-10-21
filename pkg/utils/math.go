@@ -26,6 +26,16 @@ func Max(f1, f2, f3 float64) float64 {
 	return math.Max(f1, math.Max(f2, f3))
 }
 
+func MaxN(nums ...float64) float64 {
+	max := nums[0]
+	for i, num := range nums {
+		if i != 0 {
+			max = math.Max(max, num)
+		}
+	}
+	return max
+}
+
 // func maxN()
 
 // func Min[T constraints.Ordered](a, b T) T {
