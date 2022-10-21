@@ -21,6 +21,7 @@ type Camera struct {
 	fov_vRad     float64
 	fov_hRad     float64
 	aspect       float64
+	up           vec3.Vec3
 }
 
 func NewCamera(pos vec3.Vec3, sizeX int, sizeY int) *Camera {
@@ -28,6 +29,8 @@ func NewCamera(pos vec3.Vec3, sizeX int, sizeY int) *Camera {
 	cam := new(Camera)
 	cam.Pos = pos
 	cam.Dir = vec3.UnitX()
+	cam.up = vec3.UnitZ()
+	cam.SizeX = sizeX
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
 	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
@@ -47,6 +50,7 @@ func NewCameraFOV(pos vec3.Vec3, sizeX int, sizeY int, fov float64) *Camera {
 	cam := new(Camera)
 	cam.Pos = pos
 	cam.Dir = vec3.UnitX()
+	cam.up = vec3.UnitZ()
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
 	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
@@ -79,12 +83,14 @@ func (c *Camera) RayForPixel(px Point) Ray {
 	vecY := vec3.Vec3{X: float64(relPxPos.Y), Y: adjY, Z: 0}
 	vecY = vecY.Unit()
 
-	dirVec := vec3.Vec3{X: 0, Y: vecX.X, Z: vecY.X}
-
-	return Ray{
+	right := c.up.Cross(c.Dir).Mult(vecX.X)
+	up := c.up.Mult(vecY.X)
+	r2 := Ray{
 		c.Pos,
-		c.Dir.Add(dirVec),
+		c.Dir.Add(up).Add(right),
 	}
+
+	return r2
 }
 
 type Point struct {
