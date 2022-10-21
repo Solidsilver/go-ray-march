@@ -140,42 +140,42 @@ func RenderDefault(workers int) {
 	}
 
 	Render(&renderer, workers)
-	right := utils.Vec3UnitY()
-	right.Mult(0.25)
-	back := utils.Vec3UnitZ()
-	back.Mult(0.25)
-	iter := 20
+	// right := utils.Vec3UnitY()
+	// right.Mult(0.25)
+	// back := utils.Vec3UnitZ()
+	// back.Mult(0.25)
+	// iter := 20
 
-	for i := 0; i < iter; i++ {
-		// cam.Pos.Add(cam.Pos, right)
-		drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
-		scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-		renderer.scene = scene
-		Render(&renderer, workers)
-	}
+	// for i := 0; i < iter; i++ {
+	// 	// cam.Pos.Add(cam.Pos, right)
+	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
+	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+	// 	renderer.scene = scene
+	// 	Render(&renderer, workers)
+	// }
 
-	for i := 0; i < iter; i++ {
-		// cam.Pos.Sub(cam.Pos, back)
-		drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), back), 1, color.RGBA{1, 123, 6, 255})
-		scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-		renderer.scene = scene
-		Render(&renderer, workers)
-	}
+	// for i := 0; i < iter; i++ {
+	// 	// cam.Pos.Sub(cam.Pos, back)
+	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), back), 1, color.RGBA{1, 123, 6, 255})
+	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+	// 	renderer.scene = scene
+	// 	Render(&renderer, workers)
+	// }
 
-	for i := 0; i < iter; i++ {
-		// cam.Pos.Sub(cam.Pos, right)
-		drawable4 = drawables.NewNamedCube("b1", *utils.NewSub(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
-		scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-		renderer.scene = scene
-		Render(&renderer, workers)
-	}
+	// for i := 0; i < iter; i++ {
+	// 	// cam.Pos.Sub(cam.Pos, right)
+	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewSub(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
+	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+	// 	renderer.scene = scene
+	// 	Render(&renderer, workers)
+	// }
 
-	for i := 0; i < iter; i++ {
-		// cam.Pos.Add(cam.Pos, back)
-		drawable4 = drawables.NewNamedCube("b1", *utils.NewSub(drawable4.Pos(), back), 1, color.RGBA{1, 123, 6, 255})
-		scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-		renderer.scene = scene
-		Render(&renderer, workers)
-	}
+	// for i := 0; i < iter; i++ {
+	// 	// cam.Pos.Add(cam.Pos, back)
+	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewSub(drawable4.Pos(), back), 1, color.RGBA{1, 123, 6, 255})
+	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+	// 	renderer.scene = scene
+	// 	Render(&renderer, workers)
+	// }
 
 }
