@@ -85,7 +85,7 @@ func RayMarchColor(ray *Ray, scene *Scene, rnd float64) color.RGBA {
 
 }
 
-func RayMarch(ray *Ray, scene *Scene) MarchResult {
+func RayMarch(ray *Ray, scene *Scene, ignoreLights bool) MarchResult {
 	totalDistTraveled := 0.0
 	curPos := ray.origin
 	totalMin := MAXIMUM_TRACE_DISTANCE
@@ -101,15 +101,17 @@ func RayMarch(ray *Ray, scene *Scene) MarchResult {
 				closest = obj
 			}
 		}
-		for _, obj := range scene.Lights {
-			dist := obj.Dist(curPos)
-			if dist < minDist {
-				minDist = dist
-				closest = obj
+		if !ignoreLights {
+			for _, obj := range scene.Lights {
+				dist := obj.Dist(curPos)
+				if dist < minDist {
+					minDist = dist
+					closest = obj
+				}
 			}
 		}
 
-		if minDist < 0 || minDist < MINIMUM_HIT_DISTANCE {
+		if minDist < MINIMUM_HIT_DISTANCE || minDist < 0 {
 			retPos := utils.NewCopy(curPos)
 			retPos.Sub(*retPos, *utils.NewCopy(ray.dir).Mult(MINIMUM_HIT_DISTANCE))
 			return MarchResult{closest, *retPos, steps, totalDistTraveled}
@@ -136,7 +138,7 @@ func SurfaceNormal(p utils.Vec3, obj drawables.Drawable) utils.Vec3 {
 	xDistance := obj.Dist(*utils.NewAdd(p, utils.Vec3{X: epsilon, Y: 0, Z: 0}))
 	yDistance := obj.Dist(*utils.NewAdd(p, utils.Vec3{X: 0, Y: epsilon, Z: 0}))
 	zDistance := obj.Dist(*utils.NewAdd(p, utils.Vec3{X: 0, Y: 0, Z: epsilon}))
-	normal := utils.NewVec(xDistance, yDistance, zDistance)
+	normal := utils.NewVec3(xDistance, yDistance, zDistance)
 	normal.Minus(centerDistance)
 	normal.Div(epsilon)
 	// return normal.Div(epsilon)

@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"math"
@@ -68,7 +69,7 @@ func CalculateLighting(marchRslt MarchResult, renderer *Renderer) color.RGBA {
 			surfaceNormal := SurfaceNormal(hitPoint, marchRslt.HitObject)
 			bounceDeg := math.Min(90.0, utils.Angle(*lightDir, surfaceNormal))
 			ray := Ray{hitPoint, *lightDir}
-			rslt := RayMarch(&ray, renderer.scene)
+			rslt := RayMarch(&ray, renderer.scene, false)
 			if drawables.Equals(rslt.HitObject, lSource) {
 				brightness := float64(rslt.HitObject.Color().A)
 				brightness = brightness * (90 - bounceDeg) / 90
@@ -94,7 +95,7 @@ func RayMarchWorkerLighting(id int, workers int, renderer *Renderer, wg *sync.Wa
 		for j := 0; j <= renderer.camera.SizeY; j++ {
 			pt := Point{i, j}
 			renderer.camera.RayForPixel2(&pt, ray)
-			marchRslt := RayMarch(ray, renderer.scene)
+			marchRslt := RayMarch(ray, renderer.scene, true)
 			pxColorVal := CalculateLighting(marchRslt, renderer)
 			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		}
@@ -117,65 +118,51 @@ func Render(renderer *Renderer, workers int) {
 }
 
 func RenderDefault(workers int) {
-	drawable1 := drawables.NewNamedSphere("d1", utils.Vec3{X: 6, Y: 2, Z: 0}, 2.5, color.RGBA{100, 200, 200, 255})
-	drawable2 := drawables.NewNamedSphere("d2", utils.Vec3{X: 8, Y: -1, Z: -2}, 3.5, color.RGBA{252, 102, 11, 255})
-	drawable3 := drawables.NewNamedSphere("d3", utils.Vec3{X: 40, Y: 0, Z: 0}, 4.5, color.RGBA{76, 96, 218, 255})
+	drawable1 := drawables.NewNamedSphere("d1", utils.Vec3{X: 0, Y: 2, Z: 0}, 2.5, color.RGBA{100, 200, 200, 255})
+	drawable2 := drawables.NewNamedSphere("d2", utils.Vec3{X: 2, Y: -1, Z: -2}, 3.5, color.RGBA{252, 102, 11, 255})
+	// drawable3 := drawables.NewNamedSphere("d3", utils.Vec3{X: 40, Y: 0, Z: 0}, 4.5, color.RGBA{76, 96, 218, 255})
 	// drawable4 := drawables.NewNamedSphere("d4", utils.Vec3{X: 2, Y: 4, Z: 4}, 1, color.RGBA{1, 123, 6, 255})
-	drawable4 := drawables.NewNamedCube("b1", utils.Vec3{X: 2, Y: -4, Z: -4}, 1, color.RGBA{1, 123, 6, 255})
-	cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 1920, 1080, 45) // 1080p
+	drawable4 := drawables.NewNamedCube("b1", utils.Vec3{X: -4, Y: -4, Z: -4}, 1, color.RGBA{1, 123, 6, 255})
+	cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 1920, 1080, 20) // 1080p
 	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 3840, 2160, 35) // 4k
 	// cam := NewCameraFOV(utils.Vec3{X: -10, Y: 0, Z: 0}, 7680, 4320, 45) // 8k
 	// cam := NewCameraFOV(utils.Vec3{X: -10, Y: 0, Z: 0}, 15360, 8640, 45) // 16k
 	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 30720, 17280, 45) // 32k
 
+	// cam := NewCameraFOV(utils.Vec3{X: -25, Y: 0, Z: 0}, 1170*2, 2532*2, 65) // custom
+
 	light1 := drawables.NewNamedSphere("l1", utils.Vec3{X: -30, Y: -30, Z: -30}, 1, color.RGBA{0, 0, 0, 255})
 	light2 := drawables.NewNamedSphere("l2", utils.Vec3{X: 30, Y: 30, Z: 30}, 1, color.RGBA{0, 0, 0, 255})
 	light3 := drawables.NewNamedSphere("l3", utils.Vec3{X: -30, Y: 0, Z: 0}, 1, color.RGBA{0, 0, 0, 100})
 
-	scene := NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+	scene := NewScene([]drawables.Drawable{drawable1, drawable2, drawable4}, []drawables.Drawable{light1, light2, light3})
 
 	renderer := Renderer{
 		scene,
 		cam,
 	}
 
-	Render(&renderer, workers)
+	// Render(&renderer, workers)
 	// right := utils.Vec3UnitY()
-	// right.Mult(0.25)
+	// right.Mult(0.05)
 	// back := utils.Vec3UnitZ()
-	// back.Mult(0.25)
-	// iter := 20
+	// back.Mult(0.05)
+	iter := 50.0
 
-	// for i := 0; i < iter; i++ {
-	// 	// cam.Pos.Add(cam.Pos, right)
-	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
-	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-	// 	renderer.scene = scene
-	// 	Render(&renderer, workers)
-	// }
-
-	// for i := 0; i < iter; i++ {
-	// 	// cam.Pos.Sub(cam.Pos, back)
-	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), back), 1, color.RGBA{1, 123, 6, 255})
-	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-	// 	renderer.scene = scene
-	// 	Render(&renderer, workers)
-	// }
-
-	// for i := 0; i < iter; i++ {
-	// 	// cam.Pos.Sub(cam.Pos, right)
-	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewSub(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
-	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-	// 	renderer.scene = scene
-	// 	Render(&renderer, workers)
-	// }
-
-	// for i := 0; i < iter; i++ {
-	// 	// cam.Pos.Add(cam.Pos, back)
-	// 	drawable4 = drawables.NewNamedCube("b1", *utils.NewSub(drawable4.Pos(), back), 1, color.RGBA{1, 123, 6, 255})
-	// 	scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
-	// 	renderer.scene = scene
-	// 	Render(&renderer, workers)
-	// }
+	for i := 0.0; i < iter; i++ {
+		// cam.Dir.Add(cam.Dir, right)
+		// cam.Pos.Sub(cam.Pos, right)
+		rad := 100.0
+		val := 2 * math.Pi * i / iter
+		cam.Pos.X = math.Cos(val) * rad
+		cam.Pos.Y = math.Sin(val) * rad
+		cam.Dir.Copy(utils.DirFromPos(utils.Vec3{X: 0, Y: 0, Z: 0}, cam.Pos))
+		fmt.Printf("Pos: %v\n", cam.Pos)
+		fmt.Printf("Dir: %v\n", cam.Dir)
+		// drawable4 = drawables.NewNamedCube("b1", *utils.NewAdd(drawable4.Pos(), right), 1, color.RGBA{1, 123, 6, 255})
+		// scene = NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+		// renderer.scene = scene
+		Render(&renderer, workers)
+	}
 
 }

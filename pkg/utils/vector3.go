@@ -6,7 +6,7 @@ type Vec3 struct {
 	X, Y, Z float64
 }
 
-func NewVec(x, y, z float64) *Vec3 {
+func NewVec3(x, y, z float64) *Vec3 {
 	vec := new(Vec3)
 	vec.X = x
 	vec.Y = y

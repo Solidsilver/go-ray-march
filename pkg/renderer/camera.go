@@ -85,15 +85,16 @@ func (c *Camera) RayForPixel2(px *Point, ray *Ray) {
 	relPxPos := px.Sub(c.centerOffset)
 	fovHalfRad := c.fov_hRad / 2
 	adjX := float64(c.centerOffset.X) / math.Tan(fovHalfRad)
-	vecX := utils.Vec3{X: float64(relPxPos.X), Y: adjX, Z: 0}
-	vecX.Unit()
+	vecX := utils.NewVec2(float64(relPxPos.X), adjX)
+	vecX.Unit2()
 
 	fovYHalfRad := c.fov_vRad / 2
 	adjY := float64(c.centerOffset.Y) / math.Tan(fovYHalfRad)
-	vecY := utils.Vec3{X: float64(relPxPos.Y), Y: adjY, Z: 0}
-	vecY.Unit()
+	vecY := utils.NewVec2(float64(relPxPos.Y), adjY)
+	vecY.Unit2()
 
-	dirVec := utils.Vec3{X: 0, Y: vecX.X, Z: vecY.X}
+	dirVec := utils.Vec3{X: 0, Y: vecX.X(), Z: vecY.X()}
+	// dirVec.Cross(dirVec, c.Dir)
 
 	// rayPos := utils.NewAdd(utils.Vec3{X: 0, Y: float64(relPxPos.X), Z: float64(relPxPos.Y)}, c.Pos)
 	// ray.dir = *utils.NewAdd(c.Dir, dirVec)
