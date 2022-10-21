@@ -41,6 +41,13 @@ func (v Vec3) Mult(num float64) Vec3 {
 	return v
 }
 
+func (v1 Vec3) MultComp(v2 Vec3) Vec3 {
+	v1.X *= v2.X
+	v1.Y *= v2.Y
+	v1.Z *= v2.Z
+	return v1
+}
+
 func (v Vec3) Div(num float64) Vec3 {
 	v.X = v.X / num
 	v.Y = v.Y / num
