@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"solidsilver.dev/go-ray-marching/pkg/drawables"
+	"solidsilver.dev/go-ray-marching/pkg/utils"
 	"solidsilver.dev/go-ray-marching/pkg/vec3"
 )
 
@@ -12,12 +13,26 @@ type MarchResult struct {
 	Distance  float64
 }
 
+func minDistSlope(rbf *utils.RingBuffer[float64]) float64 {
+	sum := 0.0
+	for i := 0; i > -(rbf.Size() - 1); i-- {
+		slope := rbf.Get(i) - rbf.Get(i-1)
+		sum += slope
+	}
+
+	return sum / float64(rbf.Size()-1)
+}
+
 func RayMarch(ray Ray, scene *Scene) MarchResult {
 	totalDistTraveled := 0.0
 	curPos := ray.origin
 	totalMin := MAXIMUM_TRACE_DISTANCE
 	var closest drawables.Drawable
 	steps := 0
+	rbf := utils.NewRingBuffer[float64](3)
+	for i := 0; i < rbf.Size(); i++ {
+		rbf.Push(100)
+	}
 
 	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
 		minDist := MAXIMUM_TRACE_DISTANCE
@@ -36,11 +51,21 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 			}
 		}
 
-		if minDist < 0 || minDist < MINIMUM_HIT_DISTANCE {
-			retPos := curPos.Sub(ray.dir.Mult(MINIMUM_HIT_DISTANCE))
+		rbf.Push(minDist)
+		mds := minDistSlope(rbf)
+
+		if mds < 0 && mds > -MINIMUM_HIT_DISTANCE && minDist < MINIMUM_HIT_DISTANCE {
+
+			// println(minDistSlope(rbf))
+			retPos := curPos
+			if minDist < 0 {
+				retPos = curPos.Add(ray.dir.Mult(minDist))
+				retPos = retPos.Sub(ray.dir.Mult(MINIMUM_HIT_DISTANCE))
+			}
+
 			return MarchResult{closest, retPos, steps, totalDistTraveled}
 		}
-		distP := minDist * (1 - MINIMUM_HIT_DISTANCE)
+		distP := minDist * 0.95
 
 		curPos = curPos.Add(ray.dir.Mult(distP))
 		steps++
