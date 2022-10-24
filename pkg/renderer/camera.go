@@ -65,7 +65,7 @@ func NewCameraFOV(pos vec3.Vec3, sizeX int, sizeY int, fov float64) *Camera {
 }
 
 func (c *Camera) FlushToDisk() {
-	imgName := fmt.Sprintf("../../rend_out/render%d.png", c.frame)
+	imgName := fmt.Sprintf("../../rend_out/render%03d.png", c.frame)
 	c.frame = c.frame + 1
 	utils.EncodePNGToPath(imgName, c.Image)
 
