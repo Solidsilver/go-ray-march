@@ -93,6 +93,10 @@ func (c *Camera) RayForPixel(px Point) Ray {
 	return r2
 }
 
+func (c *Camera) Size() int64 {
+	return int64(c.SizeX) * int64(c.SizeY)
+}
+
 type Point struct {
 	X int
 	Y int

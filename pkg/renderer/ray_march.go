@@ -31,7 +31,7 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 	steps := 0
 	rbf := utils.NewRingBuffer[float64](3)
 	for i := 0; i < rbf.Size(); i++ {
-		rbf.Push(100)
+		rbf.Push(-1)
 	}
 
 	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
@@ -54,7 +54,14 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 		rbf.Push(minDist)
 		mds := minDistSlope(rbf)
 
-		if mds < 0 && mds > -MINIMUM_HIT_DISTANCE && minDist < MINIMUM_HIT_DISTANCE {
+		// if mds < .1 && mds > -1. {
+		// 	println("bob")
+		// }
+		// if minDist < MINIMUM_HIT_DISTANCE {
+		// 	print("bob2")
+		// }
+
+		if steps > MAX_STEPS || (mds < 0 && minDist < MINIMUM_HIT_DISTANCE) {
 
 			// println(minDistSlope(rbf))
 			retPos := curPos
