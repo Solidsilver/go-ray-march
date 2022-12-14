@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/Solidsilver/go-ray-marching/pkg/utils"
+	"github.com/Solidsilver/go-ray-march/pkg/utils"
 )
 
 func OfSize(num float64) Vec3 {

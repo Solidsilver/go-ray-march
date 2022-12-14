@@ -3,7 +3,7 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/Solidsilver/go-ray-marching/pkg/utils"
+	"github.com/Solidsilver/go-ray-march/pkg/utils"
 )
 
 func TestLocalSig(t *testing.T) {

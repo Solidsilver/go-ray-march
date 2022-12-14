@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/Solidsilver/go-ray-marching/pkg/renderer"
+	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 )
 
 func main() {

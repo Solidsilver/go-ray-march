@@ -1,6 +1,6 @@
 package renderer
 
-import "github.com/Solidsilver/go-ray-marching/pkg/drawables"
+import "github.com/Solidsilver/go-ray-march/pkg/drawables"
 
 type Scene struct {
 	Drawables []drawables.Drawable

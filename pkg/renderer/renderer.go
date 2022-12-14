@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Solidsilver/go-ray-marching/pkg/drawables"
-	"github.com/Solidsilver/go-ray-marching/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/drawables"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 	"github.com/rs/zerolog/log"
 	"github.com/schollz/progressbar/v3"
 )

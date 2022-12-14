@@ -6,8 +6,8 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/Solidsilver/go-ray-marching/pkg/utils"
-	"github.com/Solidsilver/go-ray-marching/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/utils"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
 
 type Box struct {

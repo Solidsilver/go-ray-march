@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/Solidsilver/go-ray-marching/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
 
 type MandelBulb struct {
