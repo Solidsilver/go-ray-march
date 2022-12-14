@@ -3,7 +3,7 @@ package drawables
 import (
 	"image/color"
 
-	"solidsilver.dev/go-ray-marching/pkg/vec3"
+	"github.com/Solidsilver/go-ray-marching/pkg/vec3"
 )
 
 type Drawable interface {

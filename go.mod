@@ -1,4 +1,4 @@
-module solidsilver.dev/go-ray-marching
+module github.com/Solidsilver/go-ray-marching
 
 go 1.18
 

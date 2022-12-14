@@ -1,9 +1,9 @@
 package renderer
 
 import (
-	"solidsilver.dev/go-ray-marching/pkg/drawables"
-	"solidsilver.dev/go-ray-marching/pkg/utils"
-	"solidsilver.dev/go-ray-marching/pkg/vec3"
+	"github.com/Solidsilver/go-ray-marching/pkg/drawables"
+	"github.com/Solidsilver/go-ray-marching/pkg/utils"
+	"github.com/Solidsilver/go-ray-marching/pkg/vec3"
 )
 
 type MarchResult struct {
