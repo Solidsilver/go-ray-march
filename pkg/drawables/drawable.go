@@ -3,13 +3,13 @@ package drawables
 import (
 	"image/color"
 
-	"solidsilver.dev/go-ray-marching/pkg/utils"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
 
 type Drawable interface {
-	Dist(pt utils.Vec3) float64
+	Dist(pt vec3.Vec3) float64
 	Color() color.RGBA
-	Pos() utils.Vec3
+	Pos() vec3.Vec3
 	ID() string
 }
 
