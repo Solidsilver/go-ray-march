@@ -28,6 +28,10 @@ type Renderer struct {
 	camera *Camera
 }
 
+func NewRenderer(scene *Scene, camera *Camera) Renderer {
+	return Renderer{scene, camera}
+}
+
 func CalculateLighting(marchRslt MarchResult, renderer *Renderer) color.RGBA {
 	pxColorVal := BG_COLOR
 	if marchRslt.HitObject != nil {
