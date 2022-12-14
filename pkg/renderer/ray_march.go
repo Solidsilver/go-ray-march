@@ -43,11 +43,13 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 				closest = obj
 			}
 		}
-		for _, obj := range scene.Lights {
-			dist := obj.Dist(curPos)
-			if dist < minDist {
-				minDist = dist
-				closest = obj
+		if !ignoreLights {
+			for _, obj := range scene.Lights {
+				dist := obj.Dist(curPos)
+				if dist < minDist {
+					minDist = dist
+					closest = obj
+				}
 			}
 		}
 
