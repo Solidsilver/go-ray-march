@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"os"
 
 	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
@@ -22,15 +23,40 @@ type Camera struct {
 	fov_hRad     float64
 	aspect       float64
 	up           vec3.Vec3
+	flushDir     string
 }
 
-func NewCamera(pos vec3.Vec3, sizeX int, sizeY int) *Camera {
+type CameraOpts struct {
+	Position vec3.Vec3
+	Size     utils.Vec2
+	Fov      float64
+	ImgDir   string
+}
+
+func NewCamera(pos vec3.Vec3, sizeX int, sizeY int, imgOut string) *Camera {
+	return NewCameraFOV(pos, sizeX, sizeY, 45, imgOut)
+}
+
+func NewCameraFOV(pos vec3.Vec3, sizeX int, sizeY int, fov float64, imgOut string) *Camera {
+	opts := CameraOpts{
+		pos,
+		utils.NewVec2(float64(sizeX), float64(sizeY)),
+		fov,
+		imgOut,
+	}
+	return NewCameraOpts(opts)
+
+}
+
+func NewCameraOpts(opts CameraOpts) *Camera {
+	sizeX := int(opts.Size.X())
+	sizeY := int(opts.Size.Y())
 	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
 	cam := new(Camera)
-	cam.Pos = pos
+	cam.Pos = opts.Position
 	cam.Dir = vec3.UnitX()
 	cam.up = vec3.UnitZ()
-	cam.SizeX = sizeX
+
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
 	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
@@ -38,34 +64,17 @@ func NewCamera(pos vec3.Vec3, sizeX int, sizeY int) *Camera {
 	cam.Image = bgImg
 	cam.centerOffset = Point{cam.SizeX / 2, cam.SizeY / 2}
 
-	cam.fov = 45
-
+	cam.fov = opts.Fov
 	cam.fov_vRad = utils.DegToRad(cam.fov)
 	cam.fov_hRad = math.Atan(math.Tan(cam.fov_vRad/2.0)*cam.aspect) * 2.0
-	return cam
-}
 
-func NewCameraFOV(pos vec3.Vec3, sizeX int, sizeY int, fov float64) *Camera {
-	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
-	cam := new(Camera)
-	cam.Pos = pos
-	cam.Dir = vec3.UnitX()
-	cam.up = vec3.UnitZ()
-	cam.SizeX = sizeX
-	cam.SizeY = sizeY
-	cam.aspect = float64(cam.SizeX) / float64(cam.SizeY)
-	cam.frame = 0
-	cam.Image = bgImg
-	cam.centerOffset = Point{cam.SizeX / 2, cam.SizeY / 2}
-
-	cam.fov = fov
-	cam.fov_vRad = utils.DegToRad(cam.fov)
-	cam.fov_hRad = math.Atan(math.Tan(cam.fov_vRad/2.0)*cam.aspect) * 2.0
+	cam.flushDir = opts.ImgDir
 	return cam
 }
 
 func (c *Camera) FlushToDisk() {
-	imgName := fmt.Sprintf("../../rend_out/render%03d.png", c.frame)
+	os.Mkdir(c.flushDir, os.ModePerm)
+	imgName := fmt.Sprintf("%s/render%03d.png", c.flushDir, c.frame)
 	c.frame = c.frame + 1
 	utils.EncodePNGToPath(imgName, c.Image)
 

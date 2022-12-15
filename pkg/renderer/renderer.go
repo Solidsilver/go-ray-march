@@ -166,7 +166,7 @@ func RenderDefault(workers int) {
 	// light4 := drawables.NewNamedSphere("l4", vec3.Vec3{X: -100, Y: 0, Z: 0}, 1, color.RGBA{255, 255, 255, 100})
 	scene := NewScene([]drawables.Drawable{drawable1}, []drawables.Drawable{light1, light2, light3})
 
-	cam := NewCameraFOV(vec3.Vec3{X: -50, Y: 0, Z: 0}, 2000, 2000, 2.75) // 4k
+	cam := NewCameraFOV(vec3.Vec3{X: -50, Y: 0, Z: 0}, 500, 500, 2.75, "../rend_out") // 4k
 	// cam := NewCameraFOV(vec3.Vec3{X: -30, Y: 0, Z: 0}, 2000, 2000, 10) // 4k
 	// scene := NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2})
 

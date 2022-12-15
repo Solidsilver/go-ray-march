@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 )
@@ -23,7 +22,7 @@ func main() {
 
 	// utils.SetupLogByLevel(*verboseOpt)
 	// proc_runners.Bulk2Tiles(*inDir, *outDir, *workersOpt, *zoomLvl)
-	os.RemoveAll("../../rend_out")
-	os.Mkdir("../../rend_out", os.ModePerm)
+	// os.RemoveAll("../../rend_out")
+	// os.Mkdir("../../rend_out", os.ModePerm)
 	renderer.RenderDefault(*workersOpt)
 }
