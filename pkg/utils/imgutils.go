@@ -41,9 +41,6 @@ func EncodeImageToBytes(img image.Image, format string) ([]byte, error) {
 	case IMG_JPEG:
 		err = jpeg.Encode(buf, img, nil)
 	}
-	if err != nil {
-		return buf.Bytes(), nil
-	}
-	return nil, err
+	return buf.Bytes(), err
 
 }
