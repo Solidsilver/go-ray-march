@@ -32,6 +32,14 @@ func NewRenderer(scene *Scene, camera *Camera) Renderer {
 	return Renderer{scene, camera}
 }
 
+func (r Renderer) GetCamera() *Camera {
+	return r.camera
+}
+
+func (r Renderer) GetScene() *Scene {
+	return r.scene
+}
+
 func CalculateLighting(marchRslt MarchResult, renderer *Renderer) color.RGBA {
 	pxColorVal := BG_COLOR
 	if marchRslt.HitObject != nil {
@@ -70,9 +78,6 @@ func RayMarchWorkerLighting(id int, workers int, renderer *Renderer, wg *sync.Wa
 	for i := id; i <= renderer.camera.SizeX; i += workers {
 		for j := 0; j <= renderer.camera.SizeY; j++ {
 			pt := Point{i, j}
-			// if pt.X == 1920/2 && pt.Y == 1080/2 {
-			// 	print("0,0")
-			// }
 			ray := renderer.camera.RayForPixel(pt)
 			marchRslt := RayMarch(ray, renderer.scene)
 			pxColorVal := CalculateLighting(marchRslt, renderer)
@@ -88,9 +93,6 @@ func RayMarchWorkerLighting2(id int, workers int, renderer *Renderer, wg *sync.W
 		for j := id; j <= renderer.camera.SizeY; j += workers {
 			j2 := (j + i) % renderer.camera.SizeY
 			pt := Point{i, j2}
-			// if pt.X == 1920/2 && pt.Y == 1080/2 {
-			// 	print("0,0")
-			// }
 			ray := renderer.camera.RayForPixel(pt)
 			marchRslt := RayMarch(ray, renderer.scene)
 			pxColorVal := CalculateLighting(marchRslt, renderer)
@@ -106,16 +108,12 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 		for j := id; j <= renderer.camera.SizeY; j += workers {
 			j2 := (j + i) % renderer.camera.SizeY
 			pt := Point{i, j2}
-			// if pt.X == 1920/2 && pt.Y == 1080/2 {
-			// 	print("0,0")
-			// }
 			ray := renderer.camera.RayForPixel(pt)
 			marchRslt := RayMarch(ray, renderer.scene)
 			pxColorVal := CalculateLighting(marchRslt, renderer)
 			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 			pb.Add(1)
 		}
-		// pb.Add(renderer.camera.SizeY)
 	}
 }
 
@@ -126,11 +124,9 @@ func RenderOut(renderer *Renderer, workers int) {
 
 func Render(renderer *Renderer, workers int) {
 	wg := new(sync.WaitGroup)
-	// pb := progressbar.Default(renderer.camera.Size(), "Rendering Image...")
 	pb := progressbar.NewOptions64(renderer.camera.Size(),
 		progressbar.OptionSetDescription("Rendering Image..."),
 		progressbar.OptionThrottle(65*time.Millisecond),
-		// progressbar.OptionShowCount(),
 		progressbar.OptionShowIts(),
 		progressbar.OptionSetItsString("px"),
 		progressbar.OptionSpinnerType(14),
