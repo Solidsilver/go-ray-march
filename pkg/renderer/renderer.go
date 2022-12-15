@@ -119,6 +119,11 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 	}
 }
 
+func RenderOut(renderer *Renderer, workers int) {
+	Render(renderer, workers)
+	renderer.camera.FlushToDisk()
+}
+
 func Render(renderer *Renderer, workers int) {
 	wg := new(sync.WaitGroup)
 	// pb := progressbar.Default(renderer.camera.Size(), "Rendering Image...")
@@ -144,7 +149,6 @@ func Render(renderer *Renderer, workers int) {
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
 	wg.Wait()
 	log.Info().Msg("Workers done, encoding image to path")
-	renderer.camera.FlushToDisk()
 }
 
 func RenderDefault(workers int) {
@@ -176,6 +180,8 @@ func RenderDefault(workers int) {
 	}
 
 	Render(&renderer, workers)
+
+	renderer.camera.FlushToDisk()
 
 	// iter := 100.0
 	//

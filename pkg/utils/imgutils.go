@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"bytes"
 	"image"
+	"image/jpeg"
 	"image/png"
 	"os"
 
@@ -22,4 +24,26 @@ func EncodePNGToPath(imgPath string, img image.Image) error {
 		// log.Error().Msg("Could not encode output image")
 	}
 	return err
+}
+
+const (
+	IMG_PNG  = "png"
+	IMG_JPEG = "jpeg"
+)
+
+func EncodeImageToBytes(img image.Image, format string) ([]byte, error) {
+	var err error
+	buf := new(bytes.Buffer)
+
+	switch format {
+	case IMG_PNG:
+		err = png.Encode(buf, img)
+	case IMG_JPEG:
+		err = jpeg.Encode(buf, img, nil)
+	}
+	if err != nil {
+		return buf.Bytes(), nil
+	}
+	return nil, err
+
 }

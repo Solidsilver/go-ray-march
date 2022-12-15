@@ -77,7 +77,10 @@ func (c *Camera) FlushToDisk() {
 	imgName := fmt.Sprintf("%s/render%03d.png", c.flushDir, c.frame)
 	c.frame = c.frame + 1
 	utils.EncodePNGToPath(imgName, c.Image)
+}
 
+func (c *Camera) GetBytes() ([]byte, error) {
+	return utils.EncodeImageToBytes(c.Image, utils.IMG_PNG)
 }
 
 func (c *Camera) RayForPixel(px Point) Ray {
