@@ -1,5 +1,5 @@
 #go-ray-march
-rend_out/
+rend_out*/
 *.pprof
 
 ### Go ###

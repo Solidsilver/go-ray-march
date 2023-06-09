@@ -8,6 +8,7 @@ import (
 
 	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/rs/zerolog/log"
 )
 
 type Camera struct {
@@ -75,6 +76,7 @@ func NewCameraOpts(opts CameraOpts) *Camera {
 func (c *Camera) FlushToDisk() {
 	os.Mkdir(c.flushDir, os.ModePerm)
 	imgName := fmt.Sprintf("%s/render%03d.png", c.flushDir, c.frame)
+	log.Info().Msgf("Encoding to path: %s", imgName)
 	c.frame = c.frame + 1
 	utils.EncodePNGToPath(imgName, c.Image)
 }
