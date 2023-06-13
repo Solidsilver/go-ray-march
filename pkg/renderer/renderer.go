@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"fmt"
 	"image/color"
 	"sync"
 	"time"
@@ -147,7 +148,7 @@ func Render(renderer *Renderer, workers int) {
 	log.Info().Msg("Workers done, encoding image to path")
 }
 
-func RenderDefault(workers int) {
+func RenderDefault(opts RenderOpts) {
 
 	// Setup Scene
 	drawable1 := drawables.NewMandelB("m1", 60, 1.5, 2.8125, vec3.Zero(), color.RGBA{255, 255, 255, 255})
@@ -170,16 +171,40 @@ func RenderDefault(workers int) {
 	// cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, 1920, 1080, 20, "./rend_out_0") // 1080p
 	// cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, 3840, 2160, 20, "./rend_out_0") // 4k
 	// cam := NewCameraFOV(vec3.Vec3{X: -10, Y: 0, Z: -1}, 7680, 4320, 10) // 8k
-	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, 15360, 8640, 20, "./rend_out_0") // 16k
+	// cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath) // 16k
 	// cam := NewCameraFOV(vec3.Vec3{X: -25, Y: 0, Z: 0}, 30720, 17280, 45) // 32k
+
+	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 
 	renderer := Renderer{
 		scene,
 		cam,
 	}
 
-	Render(&renderer, workers)
+	Render(&renderer, opts.Workers)
 
 	renderer.camera.FlushToDisk()
 
+}
+
+type RenderOpts struct {
+	Workers int
+	OutPath string
+	DimX    int
+	DimY    int
+	Fov     float64
+}
+
+func DefaultRenderOpts() RenderOpts {
+	return RenderOpts{
+		Workers: 1,
+		OutPath: "./rend_out_0",
+		DimX:    1920,
+		DimY:    1080,
+		Fov:     20,
+	}
+}
+
+func (opts RenderOpts) String() string {
+	return fmt.Sprintf("Threads: %d, OutPath: %s, Dim: %dx%d, Fov: %0.2f", opts.Workers, opts.OutPath, opts.DimX, opts.DimY, opts.Fov)
 }
