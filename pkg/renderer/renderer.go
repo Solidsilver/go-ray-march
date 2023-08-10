@@ -169,9 +169,9 @@ func DefaultScene(opts RenderOpts) *Renderer {
 
 	// Setup Scene
 	drawable1 := drawables.NewMandelB("m1", 60, 1.5, 8, vec3.Zero(), color.RGBA{255, 255, 255, 255})
-	drawable2 := drawables.NewNamedSphere("s2", vec3.Vec3{X: 2, Y: 3.5, Z: 2.5}, 1.5, color.RGBA{255, 255, 255, 255})
-	drawable3 := drawables.NewNamedSphere("s3", vec3.Vec3{X: 80, Y: 0, Z: 7}, 6.5, color.RGBA{255, 255, 255, 255})
-	drawable4 := drawables.NewNamedCube("b1", vec3.Vec3{X: -4, Y: -2, Z: -1.5}, 1, color.RGBA{255, 255, 255, 255})
+	drawable2 := drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: -4, Z: -2}, 1, color.RGBA{255, 255, 255, 255})
+	drawable3 := drawables.NewTorus(vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.5, color.RGBA{255, 255, 255, 255})
+	// drawable4 := drawables.NewNamedCube("b1", vec3.Vec3{X: -4, Y: -2, Z: -1.5}, 1, color.RGBA{255, 255, 255, 255})
 
 	// Setup lighting
 	light1 := drawables.NewNamedSphere("l1", vec3.Vec3{X: -10, Y: -10, Z: -10}, 1, color.RGBA{255, 0, 0, 255})
@@ -179,7 +179,7 @@ func DefaultScene(opts RenderOpts) *Renderer {
 	light3 := drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{0, 0, 255, 255})
 
 	// Setup Scene
-	scene := NewScene([]drawables.Drawable{drawable1, drawable2, drawable3, drawable4}, []drawables.Drawable{light1, light2, light3})
+	scene := NewScene([]drawables.Drawable{drawable2, drawable3, drawable1}, []drawables.Drawable{light1, light2, light3})
 
 	// Setup Camera
 	// cam := NewCameraFOV(vec3.Vec3{X: -50, Y: 0, Z: 0}, 5000, 5000, 2.75, "../../rend_out_3") // 4k
@@ -191,7 +191,7 @@ func DefaultScene(opts RenderOpts) *Renderer {
 	// cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath) // 16k
 	// cam := NewCameraFOV(vec3.Vec3{X: -25, Y: 0, Z: 0}, 30720, 17280, 45) // 32k
 
-	cam := NewCameraFOV(vec3.Vec3{X: -10, Y: 0, Z: -0.9}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: -1, Z: -0.1}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 
 	renderer := Renderer{
 		scene,
