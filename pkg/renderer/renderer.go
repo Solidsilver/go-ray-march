@@ -3,6 +3,7 @@ package renderer
 import (
 	"fmt"
 	"image/color"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -27,10 +28,15 @@ type Ray struct {
 type Renderer struct {
 	scene  *Scene
 	camera *Camera
+	isDone bool
 }
 
 func NewRenderer(scene *Scene, camera *Camera) Renderer {
-	return Renderer{scene, camera}
+	return Renderer{scene, camera, false}
+}
+
+func (r *Renderer) GetStatus() bool {
+	return r.isDone
 }
 
 func (r Renderer) GetCamera() *Camera {
@@ -104,18 +110,27 @@ func RayMarchWorkerLighting2(id int, workers int, renderer *Renderer, wg *sync.W
 
 func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progressbar.ProgressBar, wg *sync.WaitGroup) {
 	defer wg.Done()
-
-	for i := 0; i <= renderer.camera.SizeX; i++ {
-		for j := id; j <= renderer.camera.SizeY; j += workers {
-			j2 := (j + i) % renderer.camera.SizeY
-			pt := Point{i, j2}
-			ray := renderer.camera.RayForPixel(pt)
-			marchRslt := RayMarch(ray, renderer.scene)
-			pxColorVal := CalculateLighting(marchRslt, renderer)
-			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
-			pb.Add(1)
-		}
+	points := make([]Point, renderer.camera.Size()/int64(workers))
+	count := 0
+	for i := int64(id); i < renderer.camera.Size(); i += int64(workers) {
+		y := (i) % int64(renderer.camera.SizeY)
+		x := i / int64(renderer.camera.SizeY)
+		pt := Point{int(x), int(y)}
+		points[count] = pt
+		count++
 	}
+
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	r.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
+
+	for _, pt := range points {
+		ray := renderer.camera.RayForPixel(pt)
+		marchRslt := RayMarch(ray, renderer.scene)
+		pxColorVal := CalculateLighting(marchRslt, renderer)
+		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
+		pb.Add(1)
+	}
+
 }
 
 func RenderOut(renderer *Renderer, workers int) {
@@ -145,10 +160,12 @@ func Render(renderer *Renderer, workers int) {
 
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
 	wg.Wait()
-	log.Info().Msg("Workers done, encoding image to path")
+	// log.Info().Msg("Workers done, encoding image to path")
+	time.Sleep(time.Second)
+	renderer.isDone = true
 }
 
-func RenderDefault(opts RenderOpts) {
+func DefaultScene(opts RenderOpts) *Renderer {
 
 	// Setup Scene
 	drawable1 := drawables.NewMandelB("m1", 60, 1.5, 2.8125, vec3.Zero(), color.RGBA{255, 255, 255, 255})
@@ -179,11 +196,13 @@ func RenderDefault(opts RenderOpts) {
 	renderer := Renderer{
 		scene,
 		cam,
+		false,
 	}
+	return &renderer
 
-	Render(&renderer, opts.Workers)
+	// Render(&renderer, opts.Workers)
 
-	renderer.camera.FlushToDisk()
+	// renderer.camera.FlushToDisk()
 
 }
 
