@@ -3,6 +3,7 @@ module github.com/Solidsilver/go-ray-march
 go 1.18
 
 require (
+	github.com/fstanis/screenresolution v0.0.0-20190527020317-869904d15333
 	github.com/hajimehoshi/ebiten/v2 v2.5.6
 	github.com/rs/zerolog v1.27.0
 	github.com/schollz/progressbar/v3 v3.11.0
@@ -12,6 +13,7 @@ require (
 	github.com/ebitengine/purego v0.4.0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
+	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect

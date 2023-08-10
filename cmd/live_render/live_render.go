@@ -17,12 +17,14 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
+	"github.com/fstanis/screenresolution"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -31,19 +33,44 @@ type Game struct {
 	renderer     *renderer.Renderer
 	windowHeight int
 	windowWidth  int
-	isUpdating   uint32
 }
 
 func NewGame(opts renderer.RenderOpts) *Game {
-	ratio := float64(opts.DimX) / float64(opts.DimY)
-	fixedHeight := math.Min(1080, float64(opts.DimY))
+
+	height, width := getWindowSize(opts)
 	g := &Game{
 		offscreen:    ebiten.NewImage(opts.DimX, opts.DimY),
 		renderer:     renderer.DefaultScene(opts),
-		windowWidth:  int(math.Round(fixedHeight * ratio)),
-		windowHeight: int(fixedHeight),
+		windowWidth:  width,
+		windowHeight: height,
 	}
 	return g
+}
+
+func getWindowSize(opts renderer.RenderOpts) (height, width int) {
+	renderHeight := float64(opts.DimY)
+	renderWidth := float64(opts.DimX)
+	resolution := screenresolution.GetPrimary()
+	if opts.DimX == resolution.Width && opts.DimY == resolution.Height {
+		return resolution.Height, resolution.Width
+	}
+	renderRatio := renderWidth / renderHeight
+
+	hDiff := math.Abs(renderHeight - float64(resolution.Height))
+	wDiff := math.Abs(renderWidth - float64(resolution.Width))
+
+	if hDiff > wDiff {
+		h := float64(resolution.Height) * 0.90
+		w := h * renderRatio
+		height = int(math.Round(h))
+		width = int(math.Round(w))
+	} else {
+		w := float64(resolution.Width)
+		h := w / renderRatio
+		height = int(math.Round(h))
+		width = int(math.Round(w))
+	}
+	return height, width
 }
 
 // func color()
@@ -72,10 +99,13 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
+	resolution := screenresolution.GetPrimary()
+	defaultRes := fmt.Sprintf("%dx%d", resolution.Width, resolution.Height)
 	workersOpt := flag.Int("t", 4, "The number of concurrent jobs being processed")
-	dimensionsOpt := flag.String("d", "1920x1080", "The dimensions of the image to render")
+	dimensionsOpt := flag.String("d", defaultRes, "The dimensions of the image to render")
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
 	outDir := flag.String("o", "./rend_out_0", "The directory to output the image to")
+	scaling := flag.Int("s", 1, "Scale to render at")
 	flag.Parse()
 
 	dims := strings.Split(*dimensionsOpt, "x")
@@ -91,6 +121,11 @@ func main() {
 		log.Fatal(errors.Join(err1, err2))
 	}
 
+	if *scaling != 1 {
+		dimXInt = dimXInt * *scaling
+		dimYInt = dimYInt * *scaling
+	}
+
 	rOps := renderer.RenderOpts{
 		Workers: *workersOpt,
 		DimX:    dimXInt,
@@ -103,6 +138,7 @@ func main() {
 
 	game := NewGame(rOps)
 	ebiten.SetWindowSize(game.windowWidth, game.windowHeight)
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeOnlyFullscreenEnabled)
 	ebiten.SetScreenClearedEveryFrame(false)
 	ebiten.SetTPS(ebiten.SyncWithFPS)
 	ebiten.SetWindowTitle("Ray Marcher")
