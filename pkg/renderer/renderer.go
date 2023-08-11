@@ -3,11 +3,13 @@ package renderer
 import (
 	"fmt"
 	"image/color"
+	"math"
 	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
+	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 	"github.com/rs/zerolog/log"
 	"github.com/schollz/progressbar/v3"
@@ -18,7 +20,7 @@ const MAXIMUM_TRACE_DISTANCE = 10000.0
 const MAX_STEPS = 10000
 
 // var BG_COLOR = color.RGBA{255, 255, 255, 255}
-var BG_COLOR = color.RGBA{0, 0, 0, 255}
+var BG_COLOR = color.RGBA{198, 226, 253, 255}
 
 type Ray struct {
 	origin vec3.Vec3
@@ -29,6 +31,38 @@ type Renderer struct {
 	scene  *Scene
 	camera *Camera
 	isDone bool
+}
+
+type LightingOpts struct {
+	shadows  bool
+	vignette struct {
+		enabled  bool
+		strength float64
+	}
+	bg struct {
+		color color.RGBA
+		show  bool
+	}
+}
+
+func DefaultLightingOpts() LightingOpts {
+	return LightingOpts{
+		shadows: true,
+		vignette: struct {
+			enabled  bool
+			strength float64
+		}{
+			enabled:  true,
+			strength: 0.05,
+		},
+		bg: struct {
+			color color.RGBA
+			show  bool
+		}{
+			color: BG_COLOR,
+			show:  true,
+		},
+	}
 }
 
 func NewRenderer(scene *Scene, camera *Camera) Renderer {
@@ -79,6 +113,43 @@ func CalculateLighting(marchRslt MarchResult, renderer *Renderer) color.RGBA {
 	return pxColorVal
 }
 
+func CalculateLighting2(marchRslt MarchResult, screenPos Point, renderer *Renderer, lightingOpts LightingOpts) color.RGBA {
+	pxColorVal := lightingOpts.bg.color
+	pxColorVec := vec3.RGBAToVec3(lightingOpts.bg.color)
+	if marchRslt.HitObject != nil {
+		hitPoint := marchRslt.HitPos
+		colorVec := vec3.Zero()
+		for _, lSource := range renderer.scene.Lights {
+			lightDir := vec3.DirFromPos(lSource.Pos(), hitPoint).Unit()
+			surfaceNormal := SurfaceNormal(hitPoint, marchRslt.HitObject)
+			bounceDeg := vec3.Angle(lightDir, surfaceNormal)
+			if bounceDeg < 90 {
+				ray := Ray{hitPoint, lightDir}
+				rslt := RayMarch(ray, renderer.scene)
+				if drawables.Equals(rslt.HitObject, lSource) {
+					brightness := float64(rslt.HitObject.Color().A) / 255
+					brightness = brightness * (90 - bounceDeg) / 90
+					lightColorVec := vec3.RGBAToVec3(lSource.Color()).Mult(brightness)
+					colorVec = colorVec.Add(lightColorVec)
+
+				}
+			}
+		}
+
+		pxColorVec = vec3.RGBAToVec3(marchRslt.HitObject.Color())
+
+		pxColorVec = vec3.Min(pxColorVec.MultComp(colorVec), vec3.OfSize(1))
+
+	}
+	if lightingOpts.vignette.enabled {
+		maxVignettNorm := utils.NewVec2(float64(renderer.camera.SizeX), float64(renderer.camera.SizeY)).Norm() * math.Min(1, (1-math.Min(1, lightingOpts.vignette.strength)))
+		vignettAmt := 1 - (utils.NewVec2(float64(screenPos.X-renderer.camera.centerOffset.X), float64(screenPos.Y-renderer.camera.centerOffset.Y)).Norm() / maxVignettNorm)
+		pxColorVec = pxColorVec.Mult(vignettAmt)
+	}
+	pxColorVal = vec3.Vec3ToRGBA(pxColorVec, pxColorVal.A)
+	return pxColorVal
+}
+
 func RayMarchWorkerLighting(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -122,11 +193,12 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	r.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
-
+	lopts := DefaultLightingOpts()
 	for _, pt := range points {
 		ray := renderer.camera.RayForPixel(pt)
 		marchRslt := RayMarch(ray, renderer.scene)
-		pxColorVal := CalculateLighting(marchRslt, renderer)
+		// vignetteAmt := 1 - (utils.NewVec2(float64(pt.X-renderer.camera.centerOffset.X), float64(pt.Y-renderer.camera.centerOffset.Y)).Norm() / maxVignettNorm)
+		pxColorVal := CalculateLighting2(marchRslt, pt, renderer, lopts)
 		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		pb.Add(1)
 	}
@@ -168,18 +240,21 @@ func Render(renderer *Renderer, workers int) {
 func DefaultScene(opts RenderOpts) *Renderer {
 
 	// Setup Scene
-	drawable1 := drawables.NewMandelB("m1", 60, 1.5, 8, vec3.Zero(), color.RGBA{255, 255, 255, 255})
-	drawable2 := drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: -4, Z: -2}, 1, color.RGBA{255, 255, 255, 255})
-	drawable3 := drawables.NewTorus(vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.5, color.RGBA{255, 255, 255, 255})
+	drawable1 := drawables.NewMandelB("m1", 60, 1.5, 8, vec3.Zero(), color.RGBA{240, 167, 49, 255})
+	drawable2 := drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: -4, Z: -2}, 1, color.RGBA{237, 66, 22, 255})
+	drawable3 := drawables.NewTorus(vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.5, color.RGBA{130, 156, 154, 255})
 	// drawable4 := drawables.NewNamedCube("b1", vec3.Vec3{X: -4, Y: -2, Z: -1.5}, 1, color.RGBA{255, 255, 255, 255})
 
 	// Setup lighting
-	light1 := drawables.NewNamedSphere("l1", vec3.Vec3{X: -10, Y: -10, Z: -10}, 1, color.RGBA{255, 0, 0, 255})
-	light2 := drawables.NewNamedSphere("l2", vec3.Vec3{X: -10, Y: 10, Z: 0}, 1, color.RGBA{0, 255, 0, 255})
-	light3 := drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{0, 0, 255, 255})
+	// light1 := drawables.NewNamedSphere("l1", vec3.Vec3{X: -10, Y: -10, Z: -10}, 1, color.RGBA{255, 0, 0, 255})
+	// light2 := drawables.NewNamedSphere("l2", vec3.Vec3{X: -10, Y: 10, Z: 0}, 1, color.RGBA{0, 255, 0, 255})
+	// light3 := drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{0, 0, 255, 255})
+	light1 := drawables.NewNamedSphere("l1", vec3.Vec3{X: -10, Y: -10, Z: -10}, 1, color.RGBA{254, 255, 255, 255})
+	light2 := drawables.NewNamedSphere("l2", vec3.Vec3{X: -10, Y: 10, Z: 0}, 1, color.RGBA{69, 79, 79, 255})
+	// light3 := drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255})
 
 	// Setup Scene
-	scene := NewScene([]drawables.Drawable{drawable2, drawable3, drawable1}, []drawables.Drawable{light1, light2, light3})
+	scene := NewScene([]drawables.Drawable{drawable2, drawable3, drawable1}, []drawables.Drawable{light1, light2})
 
 	// Setup Camera
 	// cam := NewCameraFOV(vec3.Vec3{X: -50, Y: 0, Z: 0}, 5000, 5000, 2.75, "../../rend_out_3") // 4k
