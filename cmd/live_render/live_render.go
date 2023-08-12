@@ -40,10 +40,13 @@ func getWindowSize(opts renderer.RenderOpts) (height, width int) {
 	if opts.DimX == resolution.Width && opts.DimY == resolution.Height {
 		return resolution.Height, resolution.Width
 	}
+	if opts.DimX <= resolution.Width && opts.DimY <= resolution.Height {
+		return opts.DimX, opts.DimY
+	}
 	renderRatio := renderWidth / renderHeight
 
-	hDiff := math.Abs(renderHeight - float64(resolution.Height))
-	wDiff := math.Abs(renderWidth - float64(resolution.Width))
+	hDiff := renderHeight - float64(resolution.Height)
+	wDiff := renderWidth - float64(resolution.Width)
 
 	if hDiff > wDiff {
 		h := float64(resolution.Height) * 0.90

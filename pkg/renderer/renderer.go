@@ -288,9 +288,9 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 
 	scene.AddLights(
 		drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{24, 155, 205, 255}, false),
-		drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{99, 179, 109, 255}, false),
-		//drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 0, 0, 255}, false),
-		//drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
+		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
+		drawables.NewNamedSphere("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 0, 0, 255}, false),
+		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),
 	)
