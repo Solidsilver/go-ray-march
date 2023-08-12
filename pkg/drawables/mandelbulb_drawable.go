@@ -14,9 +14,10 @@ type MandelBulb struct {
 	id         string
 	color      color.RGBA
 	pos        vec3.Vec3
+	repeating  bool
 }
 
-func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, color color.RGBA) MandelBulb {
+func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, color color.RGBA, repeating bool) MandelBulb {
 	return MandelBulb{
 		iter,
 		bail,
@@ -24,10 +25,14 @@ func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, c
 		id,
 		color,
 		pos,
+		repeating,
 	}
 }
 
 func (b MandelBulb) Dist(pt vec3.Vec3) float64 {
+	if b.repeating {
+		pt = RepeatingPos(pt, 10.0)
+	}
 	z := pt
 	dr := 1.0
 	r := 0.0

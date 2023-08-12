@@ -27,6 +27,15 @@ func NewTorus(pos vec3.Vec3, majorD, minorD float64, color color.RGBA) Torus {
 	}
 }
 
+func NewNamedTorus(id string, pos vec3.Vec3, majorD, minorD float64, color color.RGBA) Torus {
+	return Torus{
+		Center:    pos,
+		Diameters: utils.NewVec2(majorD, minorD),
+		color:     color,
+		id:        id,
+	}
+}
+
 func (t Torus) Dist(pt vec3.Vec3) float64 {
 	vecToTorus := pt.Sub(t.Center)
 	q := utils.NewVec2(vecToTorus.Norm()-t.Diameters.X(), vecToTorus.Y)

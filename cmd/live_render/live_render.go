@@ -26,7 +26,7 @@ func NewGame(opts renderer.RenderOpts) *Game {
 	height, width := getWindowSize(opts)
 	g := &Game{
 		offscreen:    ebiten.NewImage(opts.DimX, opts.DimY),
-		renderer:     renderer.DefaultScene(opts),
+		renderer:     renderer.NewDefaultRenderScene(opts),
 		windowWidth:  width,
 		windowHeight: height,
 	}

@@ -80,3 +80,10 @@ func (v Vec3) Unit() Vec3 {
 	vNorm := v.Norm()
 	return v.Div(vNorm)
 }
+
+func (v Vec3) Sqrt() Vec3 {
+	v.X = math.Sqrt(v.X)
+	v.Y = math.Sqrt(v.Y)
+	v.Z = math.Sqrt(v.Z)
+	return v
+}

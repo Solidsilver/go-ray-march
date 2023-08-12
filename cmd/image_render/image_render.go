@@ -41,6 +41,7 @@ func main() {
 
 	log.Println("Rendering with options: ", rOps.String())
 
-	r := renderer.DefaultScene(rOps)
+	r := renderer.NewDefaultRenderScene(rOps)
 	renderer.Render(r, rOps.Workers)
+	r.GetCamera().FlushToDisk()
 }
