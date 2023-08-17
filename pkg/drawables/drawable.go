@@ -11,6 +11,7 @@ type Drawable interface {
 	Dist(pt vec3.Vec3) float64
 	Color() color.RGBA
 	Pos() vec3.Vec3
+	Reflectivity() float64
 	ID() string
 }
 

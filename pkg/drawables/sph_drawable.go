@@ -14,16 +14,17 @@ type Sphere struct {
 	color     color.RGBA
 	id        string
 	repeating bool
+	refl      float64
 }
 
-func NewSphere(pos vec3.Vec3, rad float64, color color.RGBA, repeating bool) Sphere {
+func NewSphere(pos vec3.Vec3, rad float64, color color.RGBA, repeating bool, refl float64) Sphere {
 	idNum := rand.Intn(1000)
 	id := fmt.Sprintf("%s-%d", "sph", idNum)
-	return Sphere{pos, rad, color, id, repeating}
+	return Sphere{pos, rad, color, id, repeating, refl}
 }
 
-func NewNamedSphere(id string, pos vec3.Vec3, rad float64, color color.RGBA, repeating bool) Sphere {
-	return Sphere{pos, rad, color, id, repeating}
+func NewNamedSphere(id string, pos vec3.Vec3, rad float64, color color.RGBA, repeating bool, refl float64) Sphere {
+	return Sphere{pos, rad, color, id, repeating, refl}
 }
 
 func (s Sphere) Dist(pt vec3.Vec3) float64 {
@@ -49,4 +50,8 @@ func (s Sphere) Equals(d Drawable) bool {
 
 func (s Sphere) ID() string {
 	return s.id
+}
+
+func (s Sphere) Reflectivity() float64 {
+	return s.refl
 }

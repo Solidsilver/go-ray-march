@@ -5,12 +5,23 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch GoMarch",
+      "name": "Launch GoMarch Image",
       "type": "go",
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/image_render/image_render.go",
       "args": ["-t", "1"]
+    },
+    {
+      "name": "Launch GoMarch Live",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/live_render/live_render.go",
+      "args": [
+        "-t",
+        "1"
+      ]
     }
   ]
 }

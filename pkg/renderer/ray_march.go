@@ -7,10 +7,14 @@ import (
 )
 
 type MarchResult struct {
-	HitObject drawables.Drawable
-	HitPos    vec3.Vec3
-	Steps     int
-	Distance  float64
+	HitObject          drawables.Drawable
+	HitPos             vec3.Vec3
+	Steps              int
+	Distance           float64
+	DidHit             bool
+	Dir                vec3.Vec3
+	ReachedMaxSteps    bool
+	ReachedMaxDistance bool
 }
 
 func minDistSlope(rbf *utils.RingBuffer[float64]) float64 {
@@ -57,7 +61,7 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 		mds := minDistSlope(rbf)
 
 		if steps == MAX_STEPS {
-			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled}
+			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled, false, ray.dir, true, false}
 		}
 
 		if mds < 0 && minDist < MINIMUM_HIT_DISTANCE {
@@ -69,7 +73,7 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 				retPos = retPos.Sub(ray.dir.Mult(MINIMUM_HIT_DISTANCE))
 			}
 
-			return MarchResult{closest, retPos, steps, totalDistTraveled}
+			return MarchResult{closest, retPos, steps, totalDistTraveled, true, ray.dir, false, false}
 		}
 		distP := minDist * 0.95
 
@@ -83,7 +87,7 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 		}
 
 	}
-	return MarchResult{nil, curPos, steps, totalDistTraveled}
+	return MarchResult{nil, curPos, steps, totalDistTraveled, false, ray.dir, false, true}
 
 }
 

@@ -15,9 +15,10 @@ type MandelBulb struct {
 	color      color.RGBA
 	pos        vec3.Vec3
 	repeating  bool
+	refl       float64
 }
 
-func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, color color.RGBA, repeating bool) MandelBulb {
+func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, color color.RGBA, repeating bool, refl float64) MandelBulb {
 	return MandelBulb{
 		iter,
 		bail,
@@ -26,6 +27,7 @@ func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, c
 		color,
 		pos,
 		repeating,
+		refl,
 	}
 }
 
@@ -70,4 +72,8 @@ func (b MandelBulb) Pos() vec3.Vec3 {
 }
 func (b MandelBulb) ID() string {
 	return b.id
+}
+
+func (b MandelBulb) Reflectivity() float64 {
+	return b.refl
 }

@@ -40,6 +40,10 @@ func UnitZ() Vec3 {
 	return Vec3{0, 0, 1}
 }
 
+func Unit() Vec3 {
+	return Vec3{1, 1, 1}
+}
+
 func (v Vec3) Norm() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
 }
