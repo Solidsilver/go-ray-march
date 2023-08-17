@@ -56,14 +56,11 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 		rbf.Push(minDist)
 		mds := minDistSlope(rbf)
 
-		// if mds < .1 && mds > -1. {
-		// 	println("bob")
-		// }
-		// if minDist < MINIMUM_HIT_DISTANCE {
-		// 	print("bob2")
-		// }
+		if steps == MAX_STEPS {
+			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled}
+		}
 
-		if steps > MAX_STEPS || (mds < 0 && minDist < MINIMUM_HIT_DISTANCE) {
+		if mds < 0 && minDist < MINIMUM_HIT_DISTANCE {
 
 			// println(minDistSlope(rbf))
 			retPos := curPos

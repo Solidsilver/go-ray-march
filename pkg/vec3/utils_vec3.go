@@ -64,3 +64,10 @@ func Vec3ToRGBA(vec Vec3, a uint8) color.RGBA {
 		A: a,
 	}
 }
+
+func (v Vec3) Mod(num float64) Vec3 {
+	v.X = math.Mod(v.X, num)
+	v.Y = math.Mod(v.Y, num)
+	v.Z = math.Mod(v.Z, num)
+	return v
+}

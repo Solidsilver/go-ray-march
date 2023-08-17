@@ -2,6 +2,7 @@ package drawables
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
@@ -18,4 +19,17 @@ func Equals(d1, d2 Drawable) bool {
 		return d1.ID() == d2.ID()
 	}
 	return false
+}
+
+func RepeatingPos(pt vec3.Vec3, domain float64) vec3.Vec3 {
+	pt.X = modByDomain(pt.X, domain)
+	pt.Y = modByDomain(pt.Y, domain)
+	pt.Z = modByDomain(pt.Z, domain)
+	return pt
+}
+
+func modByDomain(in, domain float64) float64 {
+	out := math.Mod(math.Abs(in+(domain/2)), domain)
+	out -= domain / 2
+	return out
 }
