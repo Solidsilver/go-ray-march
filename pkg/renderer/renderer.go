@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"math/rand"
-	"slices"
 	"sync"
 	"time"
 
@@ -19,7 +18,8 @@ const MAXIMUM_TRACE_DISTANCE = 10000.0
 const MAX_STEPS = 10000
 
 // var BG_COLOR = color.RGBA{255, 255, 255, 255}
-var BG_COLOR = color.RGBA{198, 226, 253, 255}
+// var BG_COLOR = color.RGBA{100, 100, 100, 255}
+var BG_COLOR = color.RGBA{0, 0, 0, 255}
 
 type Ray struct {
 	origin vec3.Vec3
@@ -188,38 +188,8 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 
 		pxColorVal := BG_COLOR
 		if marchRslt.HitObject != nil {
-			reflections := GetReflections(marchRslt, renderer)
-			if len(reflections) > 0 {
-
-				slices.Reverse(reflections)
-
-				for idx, reflectResult := range reflections {
-					if reflectResult.DidHit {
-						refCol := reflectResult.HitObject.Color()
-
-						lightingVal := CalculateLighting2(reflectResult, refCol, renderer)
-						var fromObj drawables.Drawable
-						if idx == len(reflections)-1 {
-							fromObj = marchRslt.HitObject
-						} else {
-							fromObj = reflections[idx+1].HitObject
-						}
-
-						reflectColor := CalculateReflectionColor(lightingVal, fromObj.Color(), fromObj.Reflectivity(), renderer)
-						pxColorVal = reflectColor
-					} else {
-						pxColorVal = BG_COLOR
-					}
-				}
-			} else if marchRslt.DidHit {
-				// log.Info().Int("tid", id).Msg("No reflections, but we hit something")
-				pxColorVal = marchRslt.HitObject.Color()
-			} else {
-				// log.Info().Int("tid", id).Msg("No reflections, and we didn't hit anything")
-				pxColorVal = BG_COLOR
-			}
-			// log.Info().Int("tid", id).Msg("Done with all reflections.")
-			pxColorVal = CalculateLighting2(marchRslt, pxColorVal, renderer)
+			iambient := vec3.RGBAToVec3(renderer.scene.options.bg.color)
+			pxColorVal = CalculatePhongReflectance(iambient, marchRslt.HitPos, marchRslt.HitObject, renderer)
 		}
 		pxColorVal = CalculatePostProcessing(vec3.RGBAToVec3(pxColorVal), marchRslt, pt, renderer)
 
@@ -285,10 +255,16 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	// Setup Scene
 	scene := NewBlankScene()
 	scene.AddDrawables(
-		drawables.NewNamedSphere("s2", vec3.Vec3{X: 4, Y: 2.5, Z: 2.5}, 1, color.RGBA{70, 150, 205, 255}, false, 0),
-		// drawables.NewNamedSphere("s2", vec3.Zero(), 1, color.RGBA{240, 167, 49, 255}, false, 0.5),
+		drawables.NewNamedSphere("s1", vec3.Vec3{X: 4, Y: 2.5, Z: 2.5}, 1, color.RGBA{70, 150, 205, 255}, false, drawables.ReflectionProperties{
+			Ambient:    0,
+			Lambertian: 1,
+			Specular:   0.1,
+			Metalness:  0.5,
+			Smoothness: 1,
+		}),
+		drawables.NewNamedSphere("s2", vec3.Zero(), 1, color.RGBA{240, 167, 49, 255}, false),
 
-		drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{240, 167, 49, 255}, false, 1),
+		// drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{240, 167, 49, 255}, false, 1),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),
@@ -297,8 +273,8 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 
 	scene.AddLights(
 		drawables.NewNamedLight("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{255, 255, 255, 255}, false),
-		drawables.NewNamedLight("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{255, 255, 255, 128}, false),
-		drawables.NewNamedLight("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 255, 255, 100}, false),
+		// drawables.NewNamedLight("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{255, 255, 255, 128}, false),
+		// drawables.NewNamedLight("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 255, 255, 100}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),

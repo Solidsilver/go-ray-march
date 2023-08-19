@@ -37,7 +37,7 @@ func Angle2(v1 Vec3, v2 Vec3) float64 {
 Returns the vector that points from p1 to p2 as a unit vector.
 */
 func DirFromPos(p1 Vec3, p2 Vec3) Vec3 {
-	dir := p1.Sub(p2)
+	dir := p2.Sub(p1)
 	return dir.Unit()
 }
 
@@ -97,4 +97,8 @@ Returns a vector reflecting the given vector off a surface with the given normal
 */
 func (v Vec3) Reflect(surfaceNormal Vec3) Vec3 {
 	return v.Sub(surfaceNormal.Mult(2 * Dot(v, surfaceNormal)))
+}
+
+func (v Vec3) Reverse() Vec3 {
+	return v.Mult(-1)
 }

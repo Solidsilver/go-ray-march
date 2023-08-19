@@ -13,6 +13,23 @@ type Drawable interface {
 	Pos() vec3.Vec3
 	Reflectivity() float64
 	ID() string
+	ReflectionProperties() ReflectionProperties
+}
+
+type ReflectionProperties struct {
+	// Ambient reflectance is always visible, regardless of lights in a scene.
+	Ambient float64
+	// Lambertian reflectance is matte reflection directly related to
+	// light falling onto the object from light source
+	Lambertian float64
+	// Specular term ms is the mirror-like reflection of light off an object to the eye
+	Specular float64
+	// Metalness msm controls the color of the specular highlights. msm = 0 means the highlight is the color
+	// of the lightsource, msm = 1 means the highlight is the color of the object.
+	Metalness float64
+	// msp characterizes the smoothness (i.e., the sharpness of the
+	// highlight spot) of a material, and forms an exponent in the calculation of the specular term.
+	Smoothness float64
 }
 
 func Equals(d1, d2 Drawable) bool {

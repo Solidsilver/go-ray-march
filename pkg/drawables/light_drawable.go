@@ -58,3 +58,12 @@ func (s Light) Brightness() uint8 {
 func (s Light) Reflectivity() float64 {
 	return 0
 }
+
+func (l Light) ReflectionProperties() ReflectionProperties {
+	return ReflectionProperties{
+		Ambient:    0,
+		Lambertian: 0,
+		Specular:   0,
+		Metalness:  0,
+	}
+}
