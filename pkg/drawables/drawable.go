@@ -30,6 +30,8 @@ type ReflectionProperties struct {
 	// msp characterizes the smoothness (i.e., the sharpness of the
 	// highlight spot) of a material, and forms an exponent in the calculation of the specular term.
 	Smoothness float64
+
+	Reflection float64
 }
 
 func Equals(d1, d2 Drawable) bool {

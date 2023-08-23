@@ -255,12 +255,13 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	// Setup Scene
 	scene := NewBlankScene()
 	scene.AddDrawables(
-		drawables.NewNamedSphere("s1", vec3.Vec3{X: 4, Y: 2.5, Z: 2.5}, 1, color.RGBA{70, 150, 205, 255}, false, drawables.ReflectionProperties{
+		drawables.NewNamedSphere("s1", vec3.Vec3{X: 3, Y: 1.5, Z: -1.5}, 1, color.RGBA{70, 150, 205, 255}, false, drawables.ReflectionProperties{
 			Ambient:    0,
-			Lambertian: 1,
-			Specular:   0.1,
-			Metalness:  0.5,
+			Lambertian: 0.5,
+			Specular:   0,
+			Metalness:  0,
 			Smoothness: 1,
+			// Reflection: 0.5,
 		}),
 		drawables.NewNamedSphere("s2", vec3.Zero(), 1, color.RGBA{240, 167, 49, 255}, false),
 
@@ -272,9 +273,9 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	)
 
 	scene.AddLights(
-		drawables.NewNamedLight("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{255, 255, 255, 255}, false),
-		// drawables.NewNamedLight("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{255, 255, 255, 128}, false),
-		// drawables.NewNamedLight("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 255, 255, 100}, false),
+		drawables.NewNamedLight("l1", vec3.Vec3{X: -135, Y: -1, Z: -1}, 1, color.RGBA{255, 255, 255, 255}, false),
+		drawables.NewNamedLight("l2", vec3.Vec3{X: -135, Y: 1, Z: 1}, 1, color.RGBA{255, 255, 255, 128}, false),
+		// drawables.NewNamedLight("l5", vec3.Vec3{X: 15, Y: -8, Z: -8}, 1, color.RGBA{255, 255, 255, 100}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),

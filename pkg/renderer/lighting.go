@@ -7,6 +7,8 @@ import (
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slices"
 )
 
 func CalculateLighting2(marchRslt MarchResult, incomingColor color.RGBA, renderer *Renderer) color.RGBA {
@@ -96,16 +98,17 @@ type LightingResult struct {
 
 func calculatePhongReflectanceVec(ambientI, hitPoint vec3.Vec3, obj drawables.Drawable, rnd *Renderer, recursion int64) vec3.Vec3 {
 	if recursion > 100 {
-		// log.Info().Msg("Max recursion depth reached")
+		log.Info().Msg("Max recursion depth reached")
 		// return vec3.Zero()
-		// return vec3.Unit()
-		return vec3.RGBAToVec3(obj.Color())
+		return vec3.Unit()
+		// return vec3.RGBAToVec3(obj.Color())
 	}
 	refProps := obj.ReflectionProperties()
 	objColor := vec3.RGBAToVec3(obj.Color())
 
 	specular := objColor.Mult(refProps.Metalness).Add(vec3.OfSize(1 - refProps.Metalness))
 	surfaceNormal := SurfaceNormal(hitPoint, obj).Unit()
+	viewingRay := vec3.DirFromPos(rnd.camera.Pos, hitPoint)
 
 	outColorVec := objColor.MultComp(ambientI).Mult(refProps.Ambient)
 	for _, lSource := range rnd.scene.Lights {
@@ -126,7 +129,7 @@ func calculatePhongReflectanceVec(ambientI, hitPoint vec3.Vec3, obj drawables.Dr
 				outColorVec = outColorVec.Add(intensityLambert)
 
 				// Color component from specular light
-				viewingRay := vec3.DirFromPos(rnd.camera.Pos, hitPoint)
+
 				reflVec := lightDir.Reverse().Add(surfaceNormal.Mult(2).Mult(vec3.Dot(lightDir, surfaceNormal))).Unit()
 				intensitySpecular := specular.MultComp(lightColor).Mult(refProps.Specular)
 				rdv := vec3.Dot(reflVec.Reverse(), viewingRay)
@@ -141,35 +144,42 @@ func calculatePhongReflectanceVec(ambientI, hitPoint vec3.Vec3, obj drawables.Dr
 	}
 
 	if rnd.scene.options.reflections {
-		for _, objLSource := range rnd.scene.Drawables {
-			lightDir := vec3.DirFromPos(obj.Pos(), objLSource.Pos())
-			angle := vec3.Angle(lightDir, surfaceNormal)
-			if !drawables.Equals(objLSource, obj) && angle < 90 {
-				ray := Ray{hitPoint, lightDir}
-				rslt := RayMarch(ray, rnd.scene)
-				if rslt.HitObject != nil && drawables.Equals(rslt.HitObject, objLSource) {
-					lightColor := calculatePhongReflectanceVec(ambientI, rslt.HitPos, objLSource, rnd, recursion+1)
-					// Color component from incoming light
-					intensityLambert := objColor.MultComp(lightColor)
-					ldsNormal := vec3.Dot(lightDir, surfaceNormal)
-					ldsNormalMax := math.Max(ldsNormal, 0)
-					intensityLambert = intensityLambert.Mult(ldsNormalMax)
-					intensityLambert = intensityLambert.Mult(refProps.Lambertian)
-					outColorVec = outColorVec.Add(intensityLambert)
+		reflectionVector := viewingRay.Reflect(surfaceNormal)
+		// reflVec := viewingRay.Reverse().Add(surfaceNormal.Mult(2).Mult(vec3.Dot(viewingRay, surfaceNormal))).Unit()
+		// for _, objLSource := range rnd.scene.Drawables {
+		// lightDir := reflectionVector.Reverse()
+		// reflVec := reflectionVector
+		// lightDir := reflectionVector
 
-					// Color component from specular light
-					viewingRay := vec3.DirFromPos(rnd.camera.Pos, hitPoint)
-					reflVec := lightDir.Reverse().Add(surfaceNormal.Mult(2).Mult(vec3.Dot(lightDir, surfaceNormal))).Unit()
-					intensitySpecular := specular.MultComp(lightColor).Mult(refProps.Specular)
-					rdv := vec3.Dot(reflVec.Reverse(), viewingRay)
-					rdvMax := math.Max(rdv, 0)
-					powSmooth := math.Pow(rdvMax, refProps.Smoothness)
-					intensitySpecular = intensitySpecular.Mult(powSmooth)
-					// intensitySpecular = intensitySpecular
-					outColorVec = outColorVec.Add(intensitySpecular)
-				}
-			}
+		// if !drawables.Equals(objLSource, obj) && angle < 90 {
+		ray := Ray{hitPoint, reflectionVector}
+		rslt := RayMarch(ray, rnd.scene)
+		if rslt.HitObject != nil && rslt.HitObject != obj && slices.Contains(rnd.scene.Drawables, rslt.HitObject) {
+			lightColor := calculatePhongReflectanceVec(ambientI, rslt.HitPos, rslt.HitObject, rnd, recursion+1)
+			// Color component from incoming light
+			// intensityLambert := objColor.MultComp(lightColor)
+			// ldsNormal := vec3.Dot(lightDir, surfaceNormal)
+			// ldsNormalMax := math.Max(ldsNormal, 0)
+			// intensityLambert = intensityLambert.Mult(ldsNormalMax)
+			// intensityLambert = intensityLambert.Mult(refProps.Lambertian)
+			// outColorVec = outColorVec.Add(intensityLambert)
+			// objColor := rslt.HitObject.Color()
+			// specular := objColor.Mult(refProps.Metalness).Add(vec3.OfSize(1 - refProps.Metalness))
+
+			// Color component from specular light
+			// reflVec := lightDir.Reverse().Add(surfaceNormal.Mult(2).Mult(vec3.Dot(lightDir, surfaceNormal))).Unit()
+			// intensitySpecular := specular.MultComp(lightColor).Mult(refProps.Specular)
+			// rdv := vec3.Dot(reflVec.Reverse(), viewingRay)
+			// rdvMax := math.Max(rdv, 0)
+			// powSmooth := math.Pow(rdvMax, refProps.Smoothness)
+			// intensitySpecular = intensitySpecular.Mult(powSmooth)
+			// intensitySpecular = intensitySpecular
+			reflectivity := 1.0
+			outColorVec = outColorVec.Mult(1 - reflectivity).Add(lightColor.Mult(reflectivity))
+
 		}
+		// }
+		// }
 	}
 	outColorVec = vec3.Min(outColorVec, vec3.Unit())
 	// log.Info().Msgf("outColorVec: %v", outColorVec)
