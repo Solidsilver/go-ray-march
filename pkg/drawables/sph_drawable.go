@@ -6,6 +6,7 @@ import (
 	"math/rand"
 
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3neon"
 )
 
 type Sphere struct {
@@ -39,6 +40,15 @@ func (s Sphere) Dist(pt vec3.Vec3) float64 {
 	return vecLen - s.Rad
 }
 
+func (s Sphere) DistN(pt vec3neon.Vec3Neon) float32 {
+	// if s.repeating {
+	// 	pt = RepeatingPos(pt, 20.0)
+	// }
+	vecToSph := pt.Sub(vec3neon.FromVec3(s.Center))
+	vecLen := vecToSph.Norm()
+	return vecLen - float32(s.Rad)
+}
+
 func (s Sphere) Color() color.RGBA {
 	return s.color
 }
@@ -61,14 +71,4 @@ func (s Sphere) Reflectivity() float64 {
 
 func (s Sphere) ReflectionProperties() ReflectionProperties {
 	return s.refProps
-}
-
-func DefaultRefProps() ReflectionProperties {
-	return ReflectionProperties{
-		Ambient:    0,
-		Lambertian: 1,
-		Specular:   0,
-		Metalness:  1,
-		Smoothness: 1,
-	}
 }

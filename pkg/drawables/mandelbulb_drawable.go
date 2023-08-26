@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3neon"
 )
 
 type MandelBulb struct {
@@ -15,10 +16,15 @@ type MandelBulb struct {
 	color      color.RGBA
 	pos        vec3.Vec3
 	repeating  bool
-	refl       float64
+	refProps   ReflectionProperties
 }
 
-func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, color color.RGBA, repeating bool, refl float64) MandelBulb {
+// Reflectivity implements Drawable.
+func (MandelBulb) Reflectivity() float64 {
+	panic("unimplemented")
+}
+
+func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, color color.RGBA, repeating bool, refProps ReflectionProperties) MandelBulb {
 	return MandelBulb{
 		iter,
 		bail,
@@ -27,7 +33,7 @@ func NewMandelB(id string, iter int, bail float64, pow float64, pos vec3.Vec3, c
 		color,
 		pos,
 		repeating,
-		refl,
+		refProps,
 	}
 }
 
@@ -63,6 +69,11 @@ func (b MandelBulb) Dist(pt vec3.Vec3) float64 {
 	return 0.5 * math.Log(r) * r / dr
 }
 
+// DistN implements Drawable.
+func (MandelBulb) DistN(pt vec3neon.Vec3Neon) float32 {
+	panic("unimplemented")
+}
+
 func (b MandelBulb) Color() color.RGBA {
 	return b.color
 }
@@ -74,6 +85,6 @@ func (b MandelBulb) ID() string {
 	return b.id
 }
 
-func (b MandelBulb) Reflectivity() float64 {
-	return b.refl
+func (b MandelBulb) ReflectionProperties() ReflectionProperties {
+	return b.refProps
 }

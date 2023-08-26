@@ -5,10 +5,12 @@ import (
 	"math"
 
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3neon"
 )
 
 type Drawable interface {
 	Dist(pt vec3.Vec3) float64
+	DistN(pt vec3neon.Vec3Neon) float32
 	Color() color.RGBA
 	Pos() vec3.Vec3
 	Reflectivity() float64
@@ -48,8 +50,31 @@ func RepeatingPos(pt vec3.Vec3, domain float64) vec3.Vec3 {
 	return pt
 }
 
+// func RepeatingPosN(pt vec3neon.Vec3Neon, domain float64) vec3neon.Vec3Neon {
+// 	pt.X = modByDomainF32(pt.X, float32(domain))
+// 	pt.Y = modByDomainF32(pt.Y, float32(domain))
+// 	pt.Z = modByDomainF32(pt.Z, float32(domain))
+// 	return pt
+// }
+
+func modByDomainF32(in, domain float32) float64 {
+	out := math.Mod(math.Abs(float64(in+(domain/2))), float64(domain))
+	out -= float64(domain / 2)
+	return out
+}
+
 func modByDomain(in, domain float64) float64 {
 	out := math.Mod(math.Abs(in+(domain/2)), domain)
 	out -= domain / 2
 	return out
+}
+
+func DefaultRefProps() ReflectionProperties {
+	return ReflectionProperties{
+		Ambient:    0,
+		Lambertian: 1,
+		Specular:   0,
+		Metalness:  1,
+		Smoothness: 1,
+	}
 }

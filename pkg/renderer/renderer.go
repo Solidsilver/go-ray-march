@@ -9,6 +9,7 @@ import (
 
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3neon"
 	"github.com/rs/zerolog/log"
 	"github.com/schollz/progressbar/v3"
 )
@@ -24,6 +25,25 @@ var BG_COLOR = color.RGBA{0, 0, 0, 255}
 type Ray struct {
 	origin vec3.Vec3
 	dir    vec3.Vec3
+}
+
+func (r Ray) ToRayN() RayN {
+	return RayN{
+		origin: vec3neon.FromVec3(r.origin),
+		dir:    vec3neon.FromVec3(r.dir),
+	}
+}
+
+type RayN struct {
+	origin vec3neon.Vec3Neon
+	dir    vec3neon.Vec3Neon
+}
+
+func (r RayN) ToRay() Ray {
+	return Ray{
+		origin: r.origin.ToVec3(),
+		dir:    r.dir.ToVec3(),
+	}
 }
 
 type Renderer struct {
@@ -205,6 +225,44 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 
 }
 
+func RayMarchWorkerLighting3N(id int, workers int, renderer *Renderer, pb *progressbar.ProgressBar, wg *sync.WaitGroup) {
+	defer wg.Done()
+	log.Info().Int("tid", id).Msg("Preparing Render")
+	points := make([]Point, renderer.camera.Size()/int64(workers))
+	count := 0
+	for i := int64(id); i < renderer.camera.Size(); i += int64(workers) {
+		y := (i) % int64(renderer.camera.SizeY)
+		x := i / int64(renderer.camera.SizeY)
+		pt := Point{int(x), int(y)}
+		points[count] = pt
+		count++
+	}
+
+	rand.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
+	log.Info().Int("tid", id).Msg("Starting Render")
+	for _, pt := range points {
+		ray := renderer.camera.RayForPixel(pt).ToRayN()
+		marchRslt := RayMarchNeon2(ray, renderer.scene)
+
+		pxColorVal := BG_COLOR
+		if marchRslt.HitObject != nil {
+			iambient := vec3neon.RGBAToVecNeon(renderer.scene.options.bg.color)
+			pxColorVal = CalculatePhongReflectanceN2(iambient, marchRslt.HitPos, marchRslt.HitObject, renderer)
+		}
+		pxColorVal = CalculatePostProcessingN(vec3neon.RGBAToVecNeon(pxColorVal), marchRslt, pt, renderer)
+
+		// reflectionColor := CalculateReflectionColor(marchRslt, renderer)
+		// log.Info().Int("tid", id).Msg("Calculating Lighting")
+
+		// log.Info().Int("tid", id).Msg("Done with Lighting")
+
+		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
+		pb.Add(1)
+		// log.Info().Int("tid", id).Msg("Done with pixel")
+	}
+
+}
+
 func GetReflections(orgResult MarchResult, renderer *Renderer) []MarchResult {
 	latestResult := orgResult
 	reflections := []MarchResult{}
@@ -239,6 +297,7 @@ func Render(renderer *Renderer, workers int) {
 		progressbar.OptionUseANSICodes(true),
 	)
 
+	startTime := time.Now()
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go RayMarchWorkerLighting3(i, workers, renderer, pb, wg)
@@ -246,6 +305,8 @@ func Render(renderer *Renderer, workers int) {
 
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
 	wg.Wait()
+	duration := time.Since(startTime)
+	log.Info().Msgf("Finished rendering in %s", duration.String())
 	time.Sleep(time.Second)
 	renderer.isDone = true
 }
@@ -263,9 +324,16 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 			Smoothness: 1,
 			// Reflection: 0.5,
 		}),
-		drawables.NewNamedSphere("s2", vec3.Zero(), 1, color.RGBA{240, 167, 49, 255}, false),
+		// drawables.NewNamedSphere("s2", vec3.Zero(), 1, color.RGBA{240, 167, 49, 255}, false),
 
-		// drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{240, 167, 49, 255}, false, 1),
+		drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{240, 167, 49, 255}, false, drawables.ReflectionProperties{
+			Ambient:    0,
+			Lambertian: 0.5,
+			Specular:   0,
+			Metalness:  0,
+			Smoothness: 1,
+			// Reflection: 0.5,
+		}),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),

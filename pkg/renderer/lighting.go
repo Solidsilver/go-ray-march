@@ -7,6 +7,7 @@ import (
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"github.com/Solidsilver/go-ray-march/pkg/vec3neon"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 )
@@ -63,6 +64,31 @@ func CalculatePostProcessing(colorVecIn vec3.Vec3, marchRslt MarchResult, screen
 	}
 
 	pxColorVal := vec3.Vec3ToRGBA(pxColorVec, 255)
+	return pxColorVal
+}
+
+func CalculatePostProcessingN(colorVecIn vec3neon.Vec3Neon, marchRslt MarchResultN, screenPos Point, renderer *Renderer) color.RGBA {
+	pxColorVec := colorVecIn
+	if renderer.scene.options.ao.enabled && marchRslt.HitObject != nil {
+		ao := 1.0 - float64(marchRslt.Steps)/float64(MAX_STEPS-1)
+		pxColorVec = pxColorVec.Mult(float32(ao))
+	}
+
+	if renderer.scene.options.dropoff.enabled {
+		dropoffDist := math.Min(renderer.scene.options.dropoff.distance, MAXIMUM_TRACE_DISTANCE)
+		distFrac := math.Min((marchRslt.Distance)/float64(dropoffDist), 1)
+		dropoff := 1 - math.Pow(distFrac, 2)
+		blendColor := vec3neon.RGBAToVecNeon(renderer.scene.options.dropoff.color)
+		pxColorVec = pxColorVec.Mult(float32(dropoff)).Add(blendColor.Mult(float32(1 - dropoff)))
+	}
+
+	if renderer.scene.options.vignette.enabled {
+		maxVignettNorm := utils.NewVec2(float64(renderer.camera.SizeX), float64(renderer.camera.SizeY)).Norm() * math.Min(1, (1-math.Min(1, renderer.scene.options.vignette.strength)))
+		vignettAmt := 1 - (utils.NewVec2(float64(screenPos.X-renderer.camera.centerOffset.X), float64(screenPos.Y-renderer.camera.centerOffset.Y)).Norm() / maxVignettNorm)
+		pxColorVec = pxColorVec.Mult(float32(vignettAmt))
+	}
+
+	pxColorVal := vec3neon.VecNeonToRGBA(pxColorVec, 255)
 	return pxColorVal
 }
 
@@ -186,7 +212,89 @@ func calculatePhongReflectanceVec(ambientI, hitPoint vec3.Vec3, obj drawables.Dr
 	return outColorVec
 }
 
+func calculatePhongReflectanceVecNeon(ambientI, hitPoint vec3neon.Vec3Neon, obj drawables.Drawable, rnd *Renderer, recursion int64) vec3neon.Vec3Neon {
+	if recursion > 100 {
+		log.Info().Msg("Max recursion depth reached")
+		// return vec3.Zero()
+		return vec3neon.OfSize(1)
+		// return vec3.RGBAToVec3(obj.Color())
+	}
+	refProps := obj.ReflectionProperties()
+	objColor := vec3neon.RGBAToVecNeon(obj.Color())
+
+	specular := objColor.Mult(float32(refProps.Metalness)).Add(vec3neon.OfSize(float32(1 - refProps.Metalness)))
+	surfaceNormal := SurfaceNormalNeon(hitPoint, obj).Unit()
+	viewingRay := vec3neon.DirFromPos(vec3neon.FromVec3(rnd.camera.Pos), hitPoint)
+
+	outColorVec := objColor.MultComp(ambientI).Mult(float32(refProps.Ambient))
+	for _, lSource := range rnd.scene.Lights {
+		lightColor := vec3neon.RGBAToVecNeon(lSource.Color())
+		lightDir := vec3neon.DirFromPos(vec3neon.FromVec3(obj.Pos()), vec3neon.FromVec3(lSource.Pos()))
+		angle := vec3neon.Angle(lightDir, surfaceNormal)
+		if angle < 90 {
+
+			ray := RayN{hitPoint, lightDir}
+			rslt := RayMarchNeon2(ray, rnd.scene)
+			if rslt.HitObject != nil && drawables.Equals(rslt.HitObject, lSource) {
+				// Color component from incoming light
+				intensityLambert := objColor.MultComp(lightColor)
+				ldsNormal := vec3neon.Dot(lightDir, surfaceNormal)
+				ldsNormalMax := float32(math.Max(float64(ldsNormal), 0))
+				intensityLambert = intensityLambert.Mult(ldsNormalMax)
+				intensityLambert = intensityLambert.Mult(float32(refProps.Lambertian))
+				outColorVec = outColorVec.Add(intensityLambert)
+
+				// Color component from specular light
+
+				reflVec := lightDir.Reverse().Add(surfaceNormal.Mult(2).Mult(vec3neon.Dot(lightDir, surfaceNormal))).Unit()
+				intensitySpecular := specular.MultComp(lightColor).Mult(float32(refProps.Specular))
+				rdv := vec3neon.Dot(reflVec.Reverse(), viewingRay)
+				rdvMax := math.Max(float64(rdv), 0)
+				powSmooth := math.Pow(rdvMax, refProps.Smoothness)
+				intensitySpecular = intensitySpecular.Mult(float32(powSmooth))
+				// intensitySpecular = intensitySpecular
+				outColorVec = outColorVec.Add(intensitySpecular)
+			}
+		}
+
+	}
+
+	if rnd.scene.options.reflections {
+		reflectionVector := viewingRay.Reflect(surfaceNormal)
+		// reflVec := viewingRay.Reverse().Add(surfaceNormal.Mult(2).Mult(vec3.Dot(viewingRay, surfaceNormal))).Unit()
+		// for _, objLSource := range rnd.scene.Drawables {
+		// lightDir := reflectionVector.Reverse()
+		// reflVec := reflectionVector
+		// lightDir := reflectionVector
+
+		// if !drawables.Equals(objLSource, obj) && angle < 90 {
+		ray := RayN{hitPoint, reflectionVector}
+		rslt := RayMarchNeon2(ray, rnd.scene)
+		if rslt.HitObject != nil && rslt.HitObject != obj && slices.Contains(rnd.scene.Drawables, rslt.HitObject) {
+			lightColor := calculatePhongReflectanceVecNeon(ambientI, rslt.HitPos, rslt.HitObject, rnd, recursion+1)
+			reflectivity := 1.0
+			outColorVec = outColorVec.Mult(float32(1 - reflectivity)).Add(lightColor.Mult(float32(reflectivity)))
+
+		}
+		// }
+		// }
+	}
+	outColorVec = vec3neon.Min(outColorVec, vec3neon.OfSize(1))
+	// log.Info().Msgf("outColorVec: %v", outColorVec)
+	return outColorVec
+}
+
 func CalculatePhongReflectance(ambientI, hitPoint vec3.Vec3, obj drawables.Drawable, rnd *Renderer) color.RGBA {
 	outColorVec := calculatePhongReflectanceVec(ambientI, hitPoint, obj, rnd, 0)
 	return vec3.Vec3ToRGBA(outColorVec, 255)
+}
+
+func CalculatePhongReflectanceN(ambientI, hitPoint vec3.Vec3, obj drawables.Drawable, rnd *Renderer) color.RGBA {
+	outColorVec := calculatePhongReflectanceVecNeon(vec3neon.FromVec3(ambientI), vec3neon.FromVec3(hitPoint), obj, rnd, 0)
+	return vec3.Vec3ToRGBA(outColorVec.ToVec3(), 255)
+}
+
+func CalculatePhongReflectanceN2(ambientI, hitPoint vec3neon.Vec3Neon, obj drawables.Drawable, rnd *Renderer) color.RGBA {
+	outColorVec := calculatePhongReflectanceVecNeon(ambientI, hitPoint, obj, rnd, 0)
+	return vec3.Vec3ToRGBA(outColorVec.ToVec3(), 255)
 }
