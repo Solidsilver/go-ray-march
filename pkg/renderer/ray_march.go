@@ -15,12 +15,12 @@ type MarchResult struct {
 
 func minDistSlope(rbf *utils.RingBuffer[float64]) float64 {
 	sum := 0.0
-	for i := 0; i > -(rbf.Size() - 1); i-- {
+	for i := 0; i > 1-rbf.Size; i-- {
 		slope := rbf.Get(i) - rbf.Get(i-1)
 		sum += slope
 	}
 
-	return sum / float64(rbf.Size()-1)
+	return sum / float64(rbf.Size-1)
 }
 
 func RayMarch(ray Ray, scene *Scene) MarchResult {
@@ -29,10 +29,7 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 	totalMin := MAXIMUM_TRACE_DISTANCE
 	var closest drawables.Drawable
 	steps := 0
-	rbf := utils.NewRingBuffer[float64](3)
-	for i := 0; i < rbf.Size(); i++ {
-		rbf.Push(-1)
-	}
+	rbf := utils.NewRingBufferFilled[float64](3, -1)
 
 	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
 		minDist := MAXIMUM_TRACE_DISTANCE
@@ -88,15 +85,14 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 }
 
 func SurfaceNormal(p vec3.Vec3, obj drawables.Drawable) vec3.Vec3 {
-	epsilon := 0.0001 // arbitrary — should be smaller than any surface detail in your distance function, but not so small as to get lost in float precision
+	epsilon := MINIMUM_HIT_DISTANCE // arbitrary — should be smaller than any surface detail in your distance function, but not so small as to get lost in float precision
 	centerDistance := obj.Dist(p)
 	grad := vec3.Vec3{
 		X: obj.Dist(p.Add(vec3.Vec3{X: epsilon, Y: 0, Z: 0})),
 		Y: obj.Dist(p.Add(vec3.Vec3{X: 0, Y: epsilon, Z: 0})),
 		Z: obj.Dist(p.Add(vec3.Vec3{X: 0, Y: 0, Z: epsilon})),
 	}
-	normal := grad.Minus(centerDistance)
-	normal = normal.Div(epsilon)
+	normal := grad.Minus(centerDistance).Div(epsilon)
 
 	return normal
 }

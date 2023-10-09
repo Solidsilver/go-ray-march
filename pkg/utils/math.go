@@ -2,13 +2,15 @@ package utils
 
 import (
 	"math"
+
+	"golang.org/x/exp/constraints"
 )
 
-func RadToDeg(rad float64) float64 {
+func RadToDeg[F constraints.Float](rad F) F {
 	return rad * 180 / math.Pi
 }
 
-func DegToRad(deg float64) float64 {
+func DegToRad[F constraints.Float](deg F) F {
 	return deg * math.Pi / 180
 }
 
@@ -22,32 +24,27 @@ func SigLocal(dist float64, step int, smooth float64) float64 {
 	return Sig(dist, 1, b, stepF, stepF)
 }
 
-func Max(f1, f2, f3 float64) float64 {
-	return math.Max(f1, math.Max(f2, f3))
-}
-
-func MaxN(nums ...float64) float64 {
+/*
+Finds the maximum of a list of floats
+and returns it.
+*/
+func MaxN[F constraints.Ordered](nums ...F) F {
 	max := nums[0]
 	for i, num := range nums {
-		if i != 0 {
-			max = math.Max(max, num)
+		if i != 0 && num > max {
+			max = num
 		}
 	}
 	return max
 }
-
-// func maxN()
-
-// func Min[T constraints.Ordered](a, b T) T {
-// 	if a < b {
-// 		return a
-// 	}
-// 	return b
-// }
 
 func Abs(val int) int {
 	if val < 0 {
 		return val * -1
 	}
 	return val
+}
+
+func Pow2[F constraints.Float](val F) F {
+	return val * val
 }

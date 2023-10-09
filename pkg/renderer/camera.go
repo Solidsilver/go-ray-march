@@ -29,7 +29,7 @@ type Camera struct {
 
 type CameraOpts struct {
 	Position vec3.Vec3
-	Size     utils.Vec2
+	Size     utils.Vec2[float64]
 	Fov      float64
 	ImgDir   string
 }

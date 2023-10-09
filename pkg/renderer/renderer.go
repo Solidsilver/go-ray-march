@@ -15,7 +15,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const MINIMUM_HIT_DISTANCE = 0.001
+const MINIMUM_HIT_DISTANCE = 0.000001
 const MAXIMUM_TRACE_DISTANCE = 10000.0
 const MAX_STEPS = 10000
 
@@ -174,7 +174,7 @@ func CalculateLighting2(marchRslt MarchResult, screenPos Point, renderer *Render
 	if renderer.scene.options.dropoff.enabled {
 		dropoffDist := math.Min(renderer.scene.options.dropoff.distance, MAXIMUM_TRACE_DISTANCE)
 		distFrac := math.Min((marchRslt.Distance)/float64(dropoffDist), 1)
-		dropoff := 1 - math.Pow(distFrac, 2)
+		dropoff := 1 - utils.Pow2(distFrac)
 		blendColor := vec3.RGBAToVec3(renderer.scene.options.dropoff.color)
 		pxColorVec = pxColorVec.Mult(dropoff).Add(blendColor.Mult(1 - dropoff))
 
@@ -251,7 +251,7 @@ func Render(renderer *Renderer, workers int) {
 	wg := new(sync.WaitGroup)
 	pb := progressbar.NewOptions64(renderer.camera.Size(),
 		progressbar.OptionSetDescription("Rendering Image..."),
-		progressbar.OptionThrottle(65*time.Millisecond),
+		progressbar.OptionThrottle(65*time.Millisecond), ->
 		progressbar.OptionShowIts(),
 		progressbar.OptionSetItsString("px"),
 		progressbar.OptionSpinnerType(14),
@@ -278,8 +278,8 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	// Setup Scene
 	scene := NewBlankScene()
 	scene.AddDrawables(
-		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{70, 150, 205, 255}, true),
-		drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{240, 167, 49, 255}, true),
+		drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{70, 150, 205, 255}, true),
+		// drawables.NewMandelB("m1", 60, 1.5, 8, vec3.Zero(), color.RGBA{240, 167, 49, 255}, false),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),
@@ -287,15 +287,15 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	)
 
 	scene.AddLights(
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{24, 155, 205, 255}, false),
+		drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{155, 105, 88, 255}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
-		drawables.NewNamedSphere("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 0, 0, 255}, false),
+		drawables.NewNamedSphere("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{255, 255, 255, 255}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),
 	)
 
-	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	cam := NewCameraFOV(vec3.Vec3{X: -10, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 
 	renderer := Renderer{
 		scene,

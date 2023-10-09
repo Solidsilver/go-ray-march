@@ -38,7 +38,7 @@ func NewNamedCube(id string, pos vec3.Vec3, dim float64, color color.RGBA) Box {
 func (b Box) Dist(pt vec3.Vec3) float64 {
 	shiftPt := pt.Sub(b.center)
 	q := shiftPt.Abs().Sub(b.bounds)
-	return vec3.Max(q, vec3.Zero()).Norm() + math.Min(utils.Max(q.X, q.Y, q.Z), 0.0)
+	return vec3.Max(q, vec3.Zero()).Norm() + math.Min(utils.MaxN(q.X, q.Y, q.Z), 0.0)
 	// return utils.NewNorm(vec3.Vec3Max(*q, vec3.Vec3Zero())) + math.Min(utils.Max(q.X, q.Y, q.Z), 0.0)
 }
 

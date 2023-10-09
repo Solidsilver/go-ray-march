@@ -47,6 +47,7 @@ func (s Sphere) Equals(d Drawable) bool {
 	return s.id == d.ID()
 }
 
+
 func (s Sphere) ID() string {
 	return s.id
 }

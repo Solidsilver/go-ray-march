@@ -11,7 +11,7 @@ import (
 
 type Torus struct {
 	Center    vec3.Vec3
-	Diameters utils.Vec2
+	Diameters utils.Vec2[float64]
 	color     color.RGBA
 	id        string
 }
