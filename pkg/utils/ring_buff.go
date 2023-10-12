@@ -19,7 +19,7 @@ func (r *RingBuffer[T]) Push(val T) {
 	r.idx = (r.idx + 1) % r.size
 }
 
-func (r *RingBuffer[T]) Get(idx int) T {
+func (r RingBuffer[T]) Get(idx int) T {
 	getIdx := (r.idx - 1 + idx) % r.size
 	if getIdx < 0 {
 		getIdx += r.size
@@ -27,10 +27,10 @@ func (r *RingBuffer[T]) Get(idx int) T {
 	return r.buffer[getIdx]
 }
 
-func (r *RingBuffer[T]) Index() int {
+func (r RingBuffer[T]) Index() int {
 	return r.idx
 }
 
-func (r *RingBuffer[T]) Size() int {
+func (r RingBuffer[T]) Size() int {
 	return r.size
 }

@@ -2,7 +2,6 @@ package renderer
 
 import (
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
-	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
 
@@ -11,28 +10,18 @@ type MarchResult struct {
 	HitPos    vec3.Vec3
 	Steps     int
 	Distance  float64
+	Mhd       float64
 }
 
-func minDistSlope(rbf *utils.RingBuffer[float64]) float64 {
-	sum := 0.0
-	for i := 0; i > -(rbf.Size() - 1); i-- {
-		slope := rbf.Get(i) - rbf.Get(i-1)
-		sum += slope
-	}
-
-	return sum / float64(rbf.Size()-1)
-}
-
-func RayMarch(ray Ray, scene *Scene) MarchResult {
+func RayMarch(ray Ray, renderer *Renderer) MarchResult {
+	scene := renderer.scene
 	totalDistTraveled := 0.0
 	curPos := ray.origin
 	totalMin := MAXIMUM_TRACE_DISTANCE
 	var closest drawables.Drawable
 	steps := 0
-	rbf := utils.NewRingBuffer[float64](3)
-	for i := 0; i < rbf.Size(); i++ {
-		rbf.Push(-1)
-	}
+	minDistAvg := 0.0
+	maxTraceCubed := MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE
 
 	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
 		minDist := MAXIMUM_TRACE_DISTANCE
@@ -53,23 +42,29 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 		}
 		// }
 
-		rbf.Push(minDist)
-		mds := minDistSlope(rbf)
+		oldAvg := minDistAvg
+		minDistAvg -= minDistAvg / 3
+		minDistAvg += minDist / 3
+		minDistSlope := minDistAvg - oldAvg
 
 		if steps == MAX_STEPS {
-			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled}
+			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled, MINIMUM_HIT_DISTANCE}
 		}
 
-		if mds < 0 && minDist < MINIMUM_HIT_DISTANCE {
+		minHitDist := MINIMUM_HIT_DISTANCE
+		if LOD {
+			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
+			minHitDist += (distFromCamera * distFromCamera * distFromCamera / maxTraceCubed * MAX_HIT_DISTANCE)
+		}
+		if minDistSlope < 0 && minDist < minHitDist {
 
-			// println(minDistSlope(rbf))
 			retPos := curPos
 			if minDist < 0 {
-				retPos = curPos.Add(ray.dir.Mult(minDist))
-				retPos = retPos.Sub(ray.dir.Mult(MINIMUM_HIT_DISTANCE))
+				// retPos = curPos.Add(ray.dir.Mult(minDist))
+				retPos = retPos.Sub(ray.dir.Mult(minHitDist))
 			}
 
-			return MarchResult{closest, retPos, steps, totalDistTraveled}
+			return MarchResult{closest, retPos, steps, totalDistTraveled, minHitDist}
 		}
 		distP := minDist * 0.95
 
@@ -83,12 +78,12 @@ func RayMarch(ray Ray, scene *Scene) MarchResult {
 		}
 
 	}
-	return MarchResult{nil, curPos, steps, totalDistTraveled}
+	return MarchResult{nil, curPos, steps, totalDistTraveled, MINIMUM_HIT_DISTANCE}
 
 }
 
-func SurfaceNormal(p vec3.Vec3, obj drawables.Drawable) vec3.Vec3 {
-	epsilon := 0.0001 // arbitrary — should be smaller than any surface detail in your distance function, but not so small as to get lost in float precision
+func SurfaceNormal(p vec3.Vec3, obj drawables.Drawable, epsilon float64) vec3.Vec3 {
+	// epsilon := 0.0001 // arbitrary — should be smaller than any surface detail in your distance function, but not so small as to get lost in float precision
 	centerDistance := obj.Dist(p)
 	grad := vec3.Vec3{
 		X: obj.Dist(p.Add(vec3.Vec3{X: epsilon, Y: 0, Z: 0})),
