@@ -81,6 +81,16 @@ func (c *Camera) FlushToDisk() {
 	utils.EncodePNGToPath(imgName, c.Image)
 }
 
+func (c *Camera) Reset() {
+	c.Image = image.NewRGBA(image.Rect(0, 0, c.SizeX, c.SizeY))
+	// make the entire image black
+	// for x := 0; x < c.SizeX; x++ {
+	// 	for y := 0; y < c.SizeY; y++ {
+	// 		c.Image.Set(x, y, color.RGBA{0, 0, 0, 0})
+	// 	}
+	// }
+}
+
 func (c *Camera) GetBytes() ([]byte, error) {
 	return utils.EncodeImageToBytes(c.Image, utils.IMG_PNG)
 }
@@ -122,4 +132,36 @@ func (pt Point) Add(pt2 Point) Point {
 
 func (pt Point) Sub(pt2 Point) Point {
 	return Point{pt.X - pt2.X, pt.Y - pt2.Y}
+}
+
+func (c *Camera) MoveUp(amt float64) {
+	c.Pos = c.Pos.Sub(c.up.Mult(amt))
+}
+
+func (c *Camera) MoveDown(amt float64) {
+	c.Pos = c.Pos.Add(c.up.Mult(amt))
+}
+
+func (c *Camera) MoveLeft(amt float64) {
+	c.Pos = c.Pos.Add(c.Dir.Cross(c.up).Mult(amt))
+}
+
+func (c *Camera) MoveRight(amt float64) {
+	c.Pos = c.Pos.Sub(c.Dir.Cross(c.up).Mult(amt))
+}
+
+func (c *Camera) MoveForward(amt float64) {
+	c.Pos = c.Pos.Add(c.Dir.Mult(amt))
+}
+
+func (c *Camera) MoveBackward(amt float64) {
+	c.Pos = c.Pos.Sub(c.Dir.Mult(amt))
+}
+
+func (c *Camera) RotateLeft(amt float64) {
+	c.Dir = c.Dir.Mult(1 - amt).Add(c.up.Cross(c.Dir).Mult(amt))
+}
+
+func (c *Camera) RotateRight(amt float64) {
+	c.Dir = c.Dir.Mult(1 - amt).Sub(c.up.Cross(c.Dir).Mult(amt))
 }

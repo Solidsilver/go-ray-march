@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
@@ -16,8 +17,8 @@ import (
 )
 
 const MINIMUM_HIT_DISTANCE = 0.00001
-const MAX_HIT_DISTANCE = 0.5
-const MAXIMUM_TRACE_DISTANCE = 10000.0
+const MAX_HIT_DISTANCE = 10.0
+const MAXIMUM_TRACE_DISTANCE = 1000.0
 const MAX_STEPS = 10000
 const LOD = true
 
@@ -32,7 +33,8 @@ type Ray struct {
 type Renderer struct {
 	scene  *Scene
 	camera *Camera
-	isDone bool
+	isDone atomic.Bool
+	Reset  atomic.Bool
 }
 
 type LightingOpts struct {
@@ -92,11 +94,15 @@ func DefaultLightingOpts() LightingOpts {
 }
 
 func NewRenderer(scene *Scene, camera *Camera) Renderer {
-	return Renderer{scene, camera, false}
+	return Renderer{scene, camera, atomic.Bool{}, atomic.Bool{}}
 }
 
-func (r *Renderer) GetStatus() bool {
-	return r.isDone
+func (r *Renderer) IsDone() bool {
+	return r.isDone.Load()
+}
+
+func (r *Renderer) SetDone(val bool) {
+	r.isDone.Store(val)
 }
 
 func (r Renderer) GetCamera() *Camera {
@@ -235,11 +241,41 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 
 	rand.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
 	for _, pt := range points {
+		if renderer.Reset.Load() {
+			// fmt.Printf("Resetting worker %d\n", id)
+			return
+		}
 		ray := renderer.camera.RayForPixel(pt)
 		marchRslt := RayMarch(ray, renderer)
 		pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
 		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		pb.Add(1)
+	}
+
+}
+
+func RayMarchWorkerLighting4(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
+	defer wg.Done()
+	points := make([]Point, renderer.camera.Size()/int64(workers))
+	count := 0
+	for i := int64(id); i < renderer.camera.Size(); i += int64(workers) {
+		y := (i) % int64(renderer.camera.SizeY)
+		x := i / int64(renderer.camera.SizeY)
+		pt := Point{int(x), int(y)}
+		points[count] = pt
+		count++
+	}
+
+	rand.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
+	for _, pt := range points {
+		if renderer.Reset.Load() {
+			// fmt.Printf("Resetting worker %d\n", id)
+			return
+		}
+		ray := renderer.camera.RayForPixel(pt)
+		marchRslt := RayMarch(ray, renderer)
+		pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
+		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 	}
 
 }
@@ -271,8 +307,53 @@ func Render(renderer *Renderer, workers int) {
 
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
 	wg.Wait()
-	time.Sleep(time.Second)
-	renderer.isDone = true
+	// time.Sleep(time.Second)
+	renderer.isDone.Store(true)
+	renderer.Reset.Store(false)
+}
+
+var mtx sync.Mutex
+
+func (renderer *Renderer) Render2(workers int, wg *sync.WaitGroup) {
+	renderer.isDone.Store(false)
+
+	wg.Add(1)
+	defer wg.Done()
+
+	var wg2 sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg2.Add(1)
+		go RayMarchWorkerLighting4(i, workers, renderer, &wg2)
+	}
+
+	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
+	wg2.Wait()
+	// time.Sleep(time.Second)
+
+	// renderer.camera.Reset()
+	renderer.Reset.Store(false)
+	renderer.isDone.Store(true)
+	fmt.Printf("Finished rendering frame \n")
+
+}
+
+func Render3(renderer *Renderer, workers int) {
+
+	var wg2 sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg2.Add(1)
+		go RayMarchWorkerLighting4(i, workers, renderer, &wg2)
+	}
+
+	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
+	wg2.Wait()
+	// time.Sleep(time.Second)
+
+	// renderer.camera.Reset()
+	fmt.Printf("Finished rendering frame \n")
+
 }
 
 func NewDefaultRenderScene(opts RenderOpts) *Renderer {
@@ -280,7 +361,7 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	// Setup Scene
 	scene := NewBlankScene()
 	scene.AddDrawables(
-		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{70, 150, 205, 255}, true),
+		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{70, 150, 205, 255}, false),
 		drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{255, 255, 255, 255}, true),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
@@ -302,7 +383,8 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	renderer := Renderer{
 		scene,
 		cam,
-		false,
+		atomic.Bool{},
+		atomic.Bool{},
 	}
 	return &renderer
 

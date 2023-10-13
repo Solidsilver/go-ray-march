@@ -21,7 +21,7 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 	var closest drawables.Drawable
 	steps := 0
 	minDistAvg := 0.0
-	maxTraceCubed := MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE
+	maxTraceCubed := MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE //* MAXIMUM_TRACE_DISTANCE
 
 	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
 		minDist := MAXIMUM_TRACE_DISTANCE
@@ -54,7 +54,7 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 		minHitDist := MINIMUM_HIT_DISTANCE
 		if LOD {
 			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
-			minHitDist += (distFromCamera * distFromCamera * distFromCamera / maxTraceCubed * MAX_HIT_DISTANCE)
+			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * MAX_HIT_DISTANCE)
 		}
 		if minDistSlope < 0 && minDist < minHitDist {
 
