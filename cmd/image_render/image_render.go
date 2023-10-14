@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 	"github.com/pkg/profile"
@@ -43,6 +44,7 @@ func main() {
 	log.Println("Rendering with options: ", rOps.String())
 
 	r := renderer.NewDefaultRenderScene(rOps)
-	renderer.Render3(r, rOps.Workers)
+	// renderer.Render3(r, rOps.Workers)
+	r.Render2(rOps.Workers, &sync.WaitGroup{})
 	r.GetCamera().FlushToDisk()
 }
