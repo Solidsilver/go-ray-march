@@ -2,29 +2,29 @@ package renderer
 
 import (
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
-	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"goki.dev/mat32/v2"
 )
 
 type MarchResult struct {
 	HitObject drawables.Drawable
-	HitPos    vec3.Vec3
+	HitPos    mat32.Vec3
 	Steps     int
-	Distance  float64
-	Mhd       float64
+	Distance  float32
+	Mhd       float32
 }
 
 func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 	scene := renderer.scene
-	totalDistTraveled := 0.0
+	totalDistTraveled := float32(0.0)
 	curPos := ray.origin
-	totalMin := MAXIMUM_TRACE_DISTANCE
+	totalMin := float32(MAXIMUM_TRACE_DISTANCE)
 	var closest drawables.Drawable
 	steps := 0
-	minDistAvg := 0.0
-	maxTraceCubed := MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE //* MAXIMUM_TRACE_DISTANCE
+	minDistAvg := float32(0.0)
+	maxTraceCubed := float32(MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE) //* MAXIMUM_TRACE_DISTANCE
 
 	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
-		minDist := MAXIMUM_TRACE_DISTANCE
+		minDist := float32(MAXIMUM_TRACE_DISTANCE)
 		for _, obj := range scene.Drawables {
 			dist := obj.Dist(curPos)
 			if dist < minDist {
@@ -51,24 +51,24 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled, MINIMUM_HIT_DISTANCE}
 		}
 
-		minHitDist := MINIMUM_HIT_DISTANCE
+		minHitDist := float32(MINIMUM_HIT_DISTANCE)
 		if LOD {
-			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
-			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * MAX_HIT_DISTANCE)
+			distFromCamera := curPos.Sub(renderer.camera.Pos).Length()
+			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * float32(MAX_HIT_DISTANCE))
 		}
 		if minDistSlope < 0 && minDist < minHitDist {
 
 			retPos := curPos
 			if minDist < 0 {
 				// retPos = curPos.Add(ray.dir.Mult(minDist))
-				retPos = retPos.Sub(ray.dir.Mult(minHitDist))
+				retPos = retPos.Sub(ray.dir.MulScalar(minHitDist))
 			}
 
 			return MarchResult{closest, retPos, steps, totalDistTraveled, minHitDist}
 		}
 		distP := minDist * 0.95
 
-		curPos = curPos.Add(ray.dir.Mult(distP))
+		curPos = curPos.Add(ray.dir.MulScalar(distP))
 		steps++
 
 		totalDistTraveled += distP
@@ -82,16 +82,16 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 
 }
 
-func SurfaceNormal(p vec3.Vec3, obj drawables.Drawable, epsilon float64) vec3.Vec3 {
+func SurfaceNormal(p mat32.Vec3, obj drawables.Drawable, epsilon float32) mat32.Vec3 {
 	// epsilon := 0.0001 // arbitrary — should be smaller than any surface detail in your distance function, but not so small as to get lost in float precision
 	centerDistance := obj.Dist(p)
-	grad := vec3.Vec3{
-		X: obj.Dist(p.Add(vec3.Vec3{X: epsilon, Y: 0, Z: 0})),
-		Y: obj.Dist(p.Add(vec3.Vec3{X: 0, Y: epsilon, Z: 0})),
-		Z: obj.Dist(p.Add(vec3.Vec3{X: 0, Y: 0, Z: epsilon})),
+	grad := mat32.Vec3{
+		X: obj.Dist(p.Add(mat32.Vec3{X: epsilon, Y: 0, Z: 0})),
+		Y: obj.Dist(p.Add(mat32.Vec3{X: 0, Y: epsilon, Z: 0})),
+		Z: obj.Dist(p.Add(mat32.Vec3{X: 0, Y: 0, Z: epsilon})),
 	}
-	normal := grad.Minus(centerDistance)
-	normal = normal.Div(epsilon)
+	normal := grad.SubScalar(centerDistance)
+	normal = normal.DivScalar(epsilon)
 
 	return normal
 }

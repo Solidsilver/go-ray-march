@@ -7,3 +7,11 @@ start:
 start-live:
   go run ./cmd/live_render/live_render.go -t 8 -fov 30 -d 100
   # go run ./cmd/live_render/live_render.go -t 8 -fov 30 -d 3840x2160
+
+
+compute:
+  #!/usr/bin/env zsh
+  cd cmd/shader_test
+  go generate
+  CGO_LDFLAGS='-Wl,-rpath,/usr/local/lib' go build
+  ./shader_test

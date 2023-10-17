@@ -4,13 +4,13 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/Solidsilver/go-ray-march/pkg/vec3"
+	"goki.dev/mat32/v2"
 )
 
 type Drawable interface {
-	Dist(pt vec3.Vec3) float64
+	Dist(pt mat32.Vec3) float32
 	Color() color.RGBA
-	Pos() vec3.Vec3
+	Pos() mat32.Vec3
 	ID() string
 }
 
@@ -21,15 +21,15 @@ func Equals(d1, d2 Drawable) bool {
 	return false
 }
 
-func RepeatingPos(pt vec3.Vec3, domain float64) vec3.Vec3 {
-	pt.X = modByDomain(pt.X, domain)
-	pt.Y = modByDomain(pt.Y, domain)
-	pt.Z = modByDomain(pt.Z, domain)
+func RepeatingPos(pt mat32.Vec3, domain float64) mat32.Vec3 {
+	pt.X = modByDomain(float64(pt.X), domain)
+	pt.Y = modByDomain(float64(pt.Y), domain)
+	pt.Z = modByDomain(float64(pt.Z), domain)
 	return pt
 }
 
-func modByDomain(in, domain float64) float64 {
+func modByDomain(in, domain float64) float32 {
 	out := math.Mod(math.Abs(in+(domain/2)), domain)
 	out -= domain / 2
-	return out
+	return float32(out)
 }
