@@ -43,8 +43,8 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 		// }
 
 		oldAvg := minDistAvg
-		minDistAvg -= minDistAvg / 3
-		minDistAvg += minDist / 3
+		minDistAvg -= minDistAvg / 3.0
+		minDistAvg += minDist / 3.0
 		minDistSlope := minDistAvg - oldAvg
 
 		if steps == MAX_STEPS {
@@ -53,14 +53,13 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 
 		minHitDist := float32(MINIMUM_HIT_DISTANCE)
 		if LOD {
-			distFromCamera := curPos.Sub(renderer.camera.Pos).Length()
+			distFromCamera := curPos.DistTo(renderer.camera.Pos)
 			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * float32(MAX_HIT_DISTANCE))
 		}
 		if minDistSlope < 0 && minDist < minHitDist {
 
 			retPos := curPos
 			if minDist < 0 {
-				// retPos = curPos.Add(ray.dir.Mult(minDist))
 				retPos = retPos.Sub(ray.dir.MulScalar(minHitDist))
 			}
 
@@ -90,8 +89,7 @@ func SurfaceNormal(p mat32.Vec3, obj drawables.Drawable, epsilon float32) mat32.
 		Y: obj.Dist(p.Add(mat32.Vec3{X: 0, Y: epsilon, Z: 0})),
 		Z: obj.Dist(p.Add(mat32.Vec3{X: 0, Y: 0, Z: epsilon})),
 	}
-	normal := grad.SubScalar(centerDistance)
-	normal = normal.DivScalar(epsilon)
+	normal := grad.SubScalar(centerDistance).DivScalar(epsilon)
 
 	return normal
 }
