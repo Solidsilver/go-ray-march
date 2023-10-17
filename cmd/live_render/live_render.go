@@ -122,7 +122,7 @@ func (g *Game) Update() error {
 		}
 		g.renderer.GetCamera().Reset()
 
-		moveAmt := 0.05
+		moveAmt := float32(0.05)
 
 		if ebiten.IsKeyPressed(ebiten.KeyShift) {
 			moveAmt = 0.005
