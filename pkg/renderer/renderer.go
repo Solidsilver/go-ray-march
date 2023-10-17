@@ -16,7 +16,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const MINIMUM_HIT_DISTANCE = 0.01
+const MINIMUM_HIT_DISTANCE = 0.0001
 const MAX_HIT_DISTANCE = 10.0
 const MAXIMUM_TRACE_DISTANCE = 5000.0
 const MAX_STEPS = 100000
@@ -86,7 +86,7 @@ func DefaultLightingOpts() LightingOpts {
 		}{
 			enabled: true,
 			color: color.RGBA{
-				100, 100, 100, 255,
+				0, 0, 0, 0,
 			},
 			distance: MAXIMUM_TRACE_DISTANCE / 25,
 		},
@@ -336,7 +336,7 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	scene := NewBlankScene()
 	scene.AddDrawables(
 		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{185, 134, 247, 255}, true),
-		drawables.NewMandelB("m1", 120, 1.5, -8, vec3.Zero(), color.RGBA{135, 134, 247, 255}, false),
+		drawables.NewMandelB("m1", 120, 1.5, 8, vec3.Zero(), color.RGBA{135, 134, 247, 255}, true),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),
@@ -345,25 +345,31 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 
 	scene.AddLights(
 		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{240, 240, 240, 255}, false),
-		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
-		// drawables.NewNamedSphere("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
+		drawables.NewNamedSphere("l2", vec3.Vec3{X: -20, Y: 1, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
+		drawables.NewNamedSphere("l5", vec3.Vec3{X: 20, Y: -8, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
+		drawables.NewNamedSphere("l2", vec3.Vec3{X: 1, Y: 20, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
+		drawables.NewNamedSphere("l5", vec3.Vec3{X: -8, Y: -20, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),
 		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: -1, Z: -15}, 1, color.RGBA{240, 240, 240, 255}, false),
 		// drawables.NewNamedSphere("l5", vec3.Vec3{X: -8, Y: -8, Z: -15}, 1, color.RGBA{200, 200, 200, 255}, false),
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: 1, Y: 1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: -1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: 1, Y: -1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: 1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: 0, Y: 0, Z: 17}, 1, color.RGBA{255, 255, 255, 255}, false),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: 1, Y: 1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: -1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: 1, Y: -1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: 1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: 0, Y: 0, Z: 17}, 1, color.RGBA{255, 255, 255, 255}, false),
 		// drawables.NewNamedSphere("l5", vec3.Vec3{X: 8, Y: 8, Z: 15}, 1, color.RGBA{200, 200, 200, 255}, false),
 	)
 
-	cam := NewCameraFOV(vec3.Vec3{X: 0, Y: 0, Z: 15}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	// cam := NewCameraFOV(vec3.Vec3{X: 0, Y: 0, Z: 15}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 
-	cam.up = vec3.UnitX()
-	cam.Dir = vec3.UnitZ().Mult(-1)
+	// cam.up = vec3.UnitX()
+	// cam.Dir = vec3.UnitZ().Mult(-1)
+
+	cam.up = vec3.UnitZ()
+	cam.Dir = vec3.UnitX()
 
 	renderer := Renderer{
 		scene,
