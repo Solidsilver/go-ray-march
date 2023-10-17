@@ -336,7 +336,7 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	scene := NewBlankScene()
 	scene.AddDrawables(
 		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{185, 134, 247, 255}, true),
-		drawables.NewMandelB("m1", 120, 1.5, 8, vec3.Zero(), color.RGBA{135, 134, 247, 255}, true),
+		drawables.NewMandelB("m1", 90, 1.5, 8, vec3.Zero(), color.RGBA{135, 134, 247, 255}, true),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),
