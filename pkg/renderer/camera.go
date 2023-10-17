@@ -5,6 +5,7 @@ import (
 	"image"
 	"math"
 	"os"
+	"sync"
 
 	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
@@ -25,6 +26,7 @@ type Camera struct {
 	aspect       float64
 	up           vec3.Vec3
 	flushDir     string
+	flushMtx     sync.Mutex
 }
 
 type CameraOpts struct {
@@ -75,10 +77,14 @@ func NewCameraOpts(opts CameraOpts) *Camera {
 
 func (c *Camera) FlushToDisk() {
 	os.Mkdir(c.flushDir, os.ModePerm)
-	imgName := fmt.Sprintf("%s/render%03d.png", c.flushDir, c.frame)
-	log.Info().Msgf("Encoding to path: %s", imgName)
-	c.frame = c.frame + 1
+	c.flushMtx.Lock()
+	curFrame := c.frame
+	c.frame += 1
+	c.flushMtx.Unlock()
+	imgName := fmt.Sprintf("%s/render%03d.png", c.flushDir, curFrame)
+	// log.Info().Msgf("Encoding to path: %s", imgName)
 	utils.EncodePNGToPath(imgName, c.Image)
+	log.Info().Msgf("Encoded to path: %s", imgName)
 }
 
 func (c *Camera) Reset() {

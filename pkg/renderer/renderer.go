@@ -16,10 +16,10 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const MINIMUM_HIT_DISTANCE = 0.0001
+const MINIMUM_HIT_DISTANCE = 0.01
 const MAX_HIT_DISTANCE = 10.0
-const MAXIMUM_TRACE_DISTANCE = 10000.0
-const MAX_STEPS = 10000
+const MAXIMUM_TRACE_DISTANCE = 5000.0
+const MAX_STEPS = 100000
 const LOD = true
 
 // var BG_COLOR = color.RGBA{255, 255, 255, 255}
@@ -86,7 +86,7 @@ func DefaultLightingOpts() LightingOpts {
 		}{
 			enabled: true,
 			color: color.RGBA{
-				0, 0, 0, 0,
+				100, 100, 100, 255,
 			},
 			distance: MAXIMUM_TRACE_DISTANCE / 25,
 		},
@@ -105,11 +105,11 @@ func (r *Renderer) SetDone(val bool) {
 	r.isDone.Store(val)
 }
 
-func (r Renderer) GetCamera() *Camera {
+func (r *Renderer) GetCamera() *Camera {
 	return r.camera
 }
 
-func (r Renderer) GetScene() *Scene {
+func (r *Renderer) GetScene() *Scene {
 	return r.scene
 }
 
@@ -254,37 +254,7 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 
 }
 
-func RayMarchWorkerLighting4(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
-	defer wg.Done()
-	points := make([]Point, renderer.camera.Size()/int64(workers))
-	count := 0
-	for i := int64(id); i < renderer.camera.Size(); i += int64(workers) {
-		y := (i) % int64(renderer.camera.SizeY)
-		x := i / int64(renderer.camera.SizeY)
-		pt := Point{int(x), int(y)}
-		points[count] = pt
-		count++
-	}
-
-	rnd := rand.New(rand.NewSource(int64(id + workers)))
-
-	rnd.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
-
-	// rand.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
-	for _, pt := range points {
-		if renderer.Reset.Load() {
-			// fmt.Printf("Resetting worker %d\n", id)
-			return
-		}
-		ray := renderer.camera.RayForPixel(pt)
-		marchRslt := RayMarch(ray, renderer)
-		pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
-		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
-	}
-
-}
-
-func RayMarchWorkerLighting5(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
+func RayMarchWorkerLighting6(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	rangeSize := renderer.camera.Size() / int64(workers)
@@ -293,8 +263,7 @@ func RayMarchWorkerLighting5(id int, workers int, renderer *Renderer, wg *sync.W
 		if renderer.Reset.Load() {
 			return
 		}
-		i := int64(value) + (rangeSize * int64(id))
-		// fmt.Printf("i: %d\n", i)
+		i := int64(value)*int64(workers) + int64(id)
 		y := (i) % int64(renderer.camera.SizeY)
 		x := i / int64(renderer.camera.SizeY)
 		pt := Point{int(x), int(y)}
@@ -339,6 +308,7 @@ func Render(renderer *Renderer, workers int) {
 
 func (renderer *Renderer) Render2(workers int, wg *sync.WaitGroup) {
 	renderer.isDone.Store(false)
+	startTime := time.Now()
 
 	wg.Add(1)
 	defer wg.Done()
@@ -347,35 +317,16 @@ func (renderer *Renderer) Render2(workers int, wg *sync.WaitGroup) {
 
 	for i := 0; i < workers; i++ {
 		wg2.Add(1)
-		go RayMarchWorkerLighting5(i, workers, renderer, &wg2)
+		go RayMarchWorkerLighting6(i, workers, renderer, &wg2)
 	}
 
 	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
 	wg2.Wait()
-	// time.Sleep(time.Second)
 
-	// renderer.camera.Reset()
 	renderer.Reset.Store(false)
 	renderer.isDone.Store(true)
-	fmt.Printf("Finished rendering frame \n")
-
-}
-
-func Render3(renderer *Renderer, workers int) {
-
-	var wg2 sync.WaitGroup
-
-	for i := 0; i < workers; i++ {
-		wg2.Add(1)
-		go RayMarchWorkerLighting4(i, workers, renderer, &wg2)
-	}
-
-	log.Info().Msg("Finished loading jobs, closing jobs & waiting for workers")
-	wg2.Wait()
-	// time.Sleep(time.Second)
-
-	// renderer.camera.Reset()
-	fmt.Printf("Finished rendering frame \n")
+	renderDuration := time.Since(startTime)
+	fmt.Printf("Rendered frame in %s\n", renderDuration.String())
 
 }
 
@@ -384,8 +335,8 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	// Setup Scene
 	scene := NewBlankScene()
 	scene.AddDrawables(
-		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{70, 150, 205, 255}, false),
-		drawables.NewMandelB("m1", 60, 1.5, 12, vec3.Zero(), color.RGBA{200, 200, 255, 255}, true),
+		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{185, 134, 247, 255}, true),
+		drawables.NewMandelB("m1", 120, 1.5, -8, vec3.Zero(), color.RGBA{135, 134, 247, 255}, false),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),
@@ -393,15 +344,26 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	)
 
 	scene.AddLights(
-		drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{240, 240, 240, 255}, false),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{240, 240, 240, 255}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 1, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
-		drawables.NewNamedSphere("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
+		// drawables.NewNamedSphere("l5", vec3.Vec3{X: -15, Y: -8, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),
+		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: -1, Z: -15}, 1, color.RGBA{240, 240, 240, 255}, false),
+		// drawables.NewNamedSphere("l5", vec3.Vec3{X: -8, Y: -8, Z: -15}, 1, color.RGBA{200, 200, 200, 255}, false),
+		drawables.NewNamedSphere("l1", vec3.Vec3{X: 1, Y: 1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: -1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		drawables.NewNamedSphere("l1", vec3.Vec3{X: 1, Y: -1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		drawables.NewNamedSphere("l1", vec3.Vec3{X: -1, Y: 1, Z: 15}, 1, color.RGBA{255, 255, 255, 255}, false),
+		drawables.NewNamedSphere("l1", vec3.Vec3{X: 0, Y: 0, Z: 17}, 1, color.RGBA{255, 255, 255, 255}, false),
+		// drawables.NewNamedSphere("l5", vec3.Vec3{X: 8, Y: 8, Z: 15}, 1, color.RGBA{200, 200, 200, 255}, false),
 	)
 
-	cam := NewCameraFOV(vec3.Vec3{X: -12, Y: -0.20, Z: -0.8}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	cam := NewCameraFOV(vec3.Vec3{X: 0, Y: 0, Z: 15}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+
+	cam.up = vec3.UnitX()
+	cam.Dir = vec3.UnitZ().Mult(-1)
 
 	renderer := Renderer{
 		scene,

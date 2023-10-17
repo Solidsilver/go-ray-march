@@ -45,6 +45,10 @@ func main() {
 
 	r := renderer.NewDefaultRenderScene(rOps)
 	// renderer.Render3(r, rOps.Workers)
+	// startTime := time.Now()
 	r.Render2(rOps.Workers, &sync.WaitGroup{})
+	// renderDuration := time.Since(startTime)
+	// log.Println("Rendered in: ", renderDuration.String())
 	r.GetCamera().FlushToDisk()
+	// log.Println("Flushed to disk in: ", time.Since(startTime).String())
 }

@@ -11,11 +11,13 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 	"github.com/fstanis/screenresolution"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/pkg/profile"
+	"golang.org/x/exp/slices"
 )
 
 type Game struct {
@@ -82,9 +84,20 @@ func (gm *Game) updateOffscreen() {
 	// }
 }
 
+var validKeys = []ebiten.Key{
+	ebiten.KeyArrowUp,
+	ebiten.KeyArrowDown,
+	ebiten.KeyArrowLeft,
+	ebiten.KeyArrowRight,
+	ebiten.KeyW,
+	ebiten.KeyS,
+	ebiten.KeyA,
+	ebiten.KeyD,
+}
+
 func isMvtKeyInList(keys []ebiten.Key) bool {
 	for _, key := range keys {
-		if key == ebiten.KeyArrowUp || key == ebiten.KeyArrowDown || key == ebiten.KeyArrowLeft || key == ebiten.KeyArrowRight || key == ebiten.KeyW || key == ebiten.KeyS || key == ebiten.KeyA || key == ebiten.KeyD {
+		if slices.Contains(validKeys, key) {
 			return true
 		}
 	}
@@ -93,6 +106,12 @@ func isMvtKeyInList(keys []ebiten.Key) bool {
 
 func (g *Game) Update() error {
 	g.keys = inpututil.AppendJustPressedKeys(g.keys[:0])
+	// if ebiten.IsKeyPressed(ebiten.KeyP) {
+	// 	go g.renderer.GetCamera().FlushToDisk()
+	// }
+	if slices.Contains(g.keys, ebiten.KeyP) {
+		go g.renderer.GetCamera().FlushToDisk()
+	}
 
 	if !g.isProcessingMove.Load() /* && !g.renderer.Reset.Load() */ && isMvtKeyInList(g.keys) {
 		g.isProcessingMove.Store(true)
@@ -116,12 +135,20 @@ func (g *Game) Update() error {
 			g.renderer.GetCamera().MoveDown(moveAmt)
 		}
 
-		// if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		// 	g.renderer.GetCamera().RotateLeft(moveAmt)
-		// }
-		// if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		// 	g.renderer.GetCamera().RotateRight(moveAmt)
-		// }
+		if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+			scene := g.renderer.GetScene()
+			bulb := scene.Drawables[0].(drawables.MandelBulb)
+			bulb.Power += 0.1
+			fmt.Printf("Power: %f\n", bulb.Power)
+			scene.Drawables[0] = bulb
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+			scene := g.renderer.GetScene()
+			bulb := scene.Drawables[0].(drawables.MandelBulb)
+			bulb.Power -= 0.1
+			fmt.Printf("Power: %f\n", bulb.Power)
+			scene.Drawables[0] = bulb
+		}
 		if ebiten.IsKeyPressed(ebiten.KeyA) {
 			g.renderer.GetCamera().MoveLeft(moveAmt)
 		}
@@ -134,6 +161,7 @@ func (g *Game) Update() error {
 		if ebiten.IsKeyPressed(ebiten.KeyS) {
 			g.renderer.GetCamera().MoveBackward(moveAmt)
 		}
+
 		// g.renderer.Reset = false
 
 		go g.renderer.Render2(g.rops.Workers, g.renderWG)
