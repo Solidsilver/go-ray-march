@@ -15,7 +15,7 @@ func MinVec3(a, b mat32.Vec3) mat32.Vec3 {
 }
 
 func DirFromPos(pt1, p2 mat32.Vec3) mat32.Vec3 {
-	return p2.Sub(pt1).Normal()
+	return pt1.Sub(p2).Normal()
 }
 
 func RGBAToVec3(color color.RGBA) mat32.Vec3 {
@@ -23,6 +23,5 @@ func RGBAToVec3(color color.RGBA) mat32.Vec3 {
 }
 
 func Vec3ToRGBA(colorVec mat32.Vec3, a uint8) color.RGBA {
-	colorVec = colorVec.MulScalar(255)
 	return color.RGBA{R: uint8(colorVec.X * 255), G: uint8(colorVec.Y * 255), B: uint8(colorVec.Z * 255), A: a}
 }
