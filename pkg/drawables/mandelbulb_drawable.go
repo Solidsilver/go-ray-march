@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
 
@@ -43,8 +44,10 @@ func (b MandelBulb) Dist(pt vec3.Vec3) float64 {
 			break
 		}
 
-		theta := math.Acos(z.Z / r)
+		// theta := math.Acos(z.Z / r)
+		theta := utils.FastAcos(z.Z / r)
 		phi := math.Atan2(z.Y, z.X)
+		// phi := utils.FastAtan2(z.Y, z.X)
 		dr = math.Pow(r, b.Power-1)*float64(b.Power)*dr + 1
 
 		zr := math.Pow(r, b.Power)
@@ -52,9 +55,12 @@ func (b MandelBulb) Dist(pt vec3.Vec3) float64 {
 		phi = phi * b.Power
 
 		z = vec3.Vec3{
-			X: math.Sin(theta) * math.Cos(phi),
-			Y: math.Sin(phi) * math.Sin(theta),
-			Z: math.Cos(theta),
+			// X: math.Sin(theta) * math.Cos(phi),
+			X: utils.FastSin(theta) * utils.FastCos(phi),
+			// Y: math.Sin(phi) * math.Sin(theta),
+			Y: utils.FastSin(phi) * utils.FastSin(theta),
+			// Z: math.Cos(theta),
+			Z: utils.FastCos(theta),
 		}.Mult(zr)
 		z = z.Add(pt)
 	}

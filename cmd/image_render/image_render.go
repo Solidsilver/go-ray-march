@@ -4,17 +4,18 @@ import (
 	"errors"
 	"flag"
 	"log"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
-	"github.com/pkg/profile"
 )
 
 func main() {
-	defer profile.Start(profile.ProfilePath(".")).Stop()
-	workersOpt := flag.Int("t", 4, "The number of concurrent jobs being processed")
+	// defer profile.Start(profile.ProfilePath(".")).Stop()
+
+	workersOpt := flag.Int("t", runtime.NumCPU(), "The number of concurrent jobs being processed")
 	dimensionsOpt := flag.String("d", "1920x1080", "The dimensions of the image to render")
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
 	outDir := flag.String("o", "./rend_out_0", "The directory to output the image to")
