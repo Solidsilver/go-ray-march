@@ -20,7 +20,10 @@ const MINIMUM_HIT_DISTANCE = 0.0001
 const MAX_HIT_DISTANCE = 10.0
 const MAXIMUM_TRACE_DISTANCE = 5000.0
 const MAX_STEPS = 100000
-const LOD = true
+
+var MAX_AMBIENT_STEPS = math.Sqrt(MINIMUM_HIT_DISTANCE*10)/10 + 150
+
+const LOD = false
 
 // var BG_COLOR = color.RGBA{255, 255, 255, 255}
 var BG_COLOR = color.RGBA{198, 226, 253, 255}
@@ -48,7 +51,8 @@ type LightingOpts struct {
 		show  bool
 	}
 	ao struct {
-		enabled bool
+		enabled  bool
+		inverted bool
 	}
 	dropoff struct {
 		enabled  bool
@@ -75,9 +79,11 @@ func DefaultLightingOpts() LightingOpts {
 			show:  true,
 		},
 		ao: struct {
-			enabled bool
+			enabled  bool
+			inverted bool
 		}{
-			enabled: true,
+			enabled:  true,
+			inverted: false,
 		},
 		dropoff: struct {
 			enabled  bool
@@ -124,7 +130,7 @@ func CalculateLighting(marchRslt MarchResult, renderer *Renderer) color.RGBA {
 			bounceDeg := vec3.Angle(lightDir, surfaceNormal)
 			if bounceDeg < 90 {
 				ray := Ray{hitPoint, lightDir}
-				rslt := RayMarch(ray, renderer)
+				rslt := RayMarch(ray, renderer, true)
 				if drawables.Equals(rslt.HitObject, lSource) {
 					brightness := float64(rslt.HitObject.Color().A) / 255
 					brightness = brightness * (90 - bounceDeg) / 90
@@ -159,7 +165,7 @@ func CalculateLighting2(marchRslt MarchResult, screenPos Point, renderer *Render
 				bounceDeg := vec3.Angle(lightDir, surfaceNormal)
 				if bounceDeg < 90 {
 					ray := Ray{hitPoint, lightDir}
-					rslt := RayMarch(ray, renderer)
+					rslt := RayMarch(ray, renderer, true)
 					if drawables.Equals(rslt.HitObject, lSource) {
 						brightness := float64(rslt.HitObject.Color().A) / 255
 						brightness = brightness * (90 - bounceDeg) / 90
@@ -171,13 +177,24 @@ func CalculateLighting2(marchRslt MarchResult, screenPos Point, renderer *Render
 
 			pxColorVec = vec3.Min(pxColorVec.MultComp(colorVec), vec3.OfSize(1))
 		}
+		if renderer.scene.options.ao.enabled {
+			var ao float64
+			if renderer.scene.options.ao.inverted {
+				ao = math.Min(float64(marchRslt.Steps)/float64(MAX_AMBIENT_STEPS-1), 0.95) - 1.0
+			} else {
+				ao = 1.0 - math.Min(float64(marchRslt.Steps)/float64(MAX_AMBIENT_STEPS-1), 0.95)
+			}
+
+			pxColorVec = pxColorVec.Mult(ao)
+
+		}
 
 	}
-	if renderer.scene.options.ao.enabled && marchRslt.HitObject != nil {
-		ao := 1.0 - float64(marchRslt.Steps)/float64(MAX_STEPS-1)
-		pxColorVec = pxColorVec.Mult(ao)
+	// if renderer.scene.options.ao.enabled && marchRslt.HitObject != nil {
+	// 	ao := 1.0 - math.Min(float64(marchRslt.Steps)/float64(MAX_AMBIENT_STEPS-1), 1)
+	// 	pxColorVec = pxColorVec.Mult(ao)
 
-	}
+	// }
 
 	if renderer.scene.options.dropoff.enabled {
 		dropoffDist := math.Min(renderer.scene.options.dropoff.distance, MAXIMUM_TRACE_DISTANCE)
@@ -205,7 +222,7 @@ func RayMarchWorkerLighting(id int, workers int, renderer *Renderer, wg *sync.Wa
 		for j := 0; j <= renderer.camera.SizeY; j++ {
 			pt := Point{i, j}
 			ray := renderer.camera.RayForPixel(pt)
-			marchRslt := RayMarch(ray, renderer)
+			marchRslt := RayMarch(ray, renderer, true)
 			pxColorVal := CalculateLighting(marchRslt, renderer)
 			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		}
@@ -220,7 +237,7 @@ func RayMarchWorkerLighting2(id int, workers int, renderer *Renderer, wg *sync.W
 			j2 := (j + i) % renderer.camera.SizeY
 			pt := Point{i, j2}
 			ray := renderer.camera.RayForPixel(pt)
-			marchRslt := RayMarch(ray, renderer)
+			marchRslt := RayMarch(ray, renderer, true)
 			pxColorVal := CalculateLighting(marchRslt, renderer)
 			renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		}
@@ -242,11 +259,10 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *progre
 	rand.Shuffle(len(points), func(i, j int) { points[i], points[j] = points[j], points[i] })
 	for _, pt := range points {
 		if renderer.Reset.Load() {
-			// fmt.Printf("Resetting worker %d\n", id)
 			return
 		}
 		ray := renderer.camera.RayForPixel(pt)
-		marchRslt := RayMarch(ray, renderer)
+		marchRslt := RayMarch(ray, renderer, false)
 		pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
 		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 		pb.Add(1)
@@ -268,7 +284,7 @@ func RayMarchWorkerLighting6(id int, workers int, renderer *Renderer, wg *sync.W
 		x := i / int64(renderer.camera.SizeY)
 		pt := Point{int(x), int(y)}
 		ray := renderer.camera.RayForPixel(pt)
-		marchRslt := RayMarch(ray, renderer)
+		marchRslt := RayMarch(ray, renderer, false)
 		pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
 		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 	}
@@ -336,7 +352,7 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	scene := NewBlankScene()
 	scene.AddDrawables(
 		// drawables.NewNamedSphere("s2", vec3.Vec3{X: 10, Y: 5, Z: 1}, 1, color.RGBA{185, 134, 247, 255}, true),
-		drawables.NewMandelB("m1", 90, 1.5, 8, vec3.Zero(), color.RGBA{135, 134, 247, 255}, true),
+		drawables.NewMandelB("m1", 90, 1.5, 8, vec3.Zero(), color.RGBA{255, 255, 255, 255}, true),
 		// drawables.NewMandelB("m2", 60, 1.5, 12, vec3.Zero(), color.RGBA{25, 35, 45, 255}, false),
 		//drawables.NewNamedCube("b2", vec3.Vec3{X: 10, Y: -4, Z: 2}, .65, color.RGBA{237, 66, 22, 255}),
 		// drawables.NewNamedTorus("t1", vec3.Vec3{X: 10, Y: -4, Z: -2}, 4, 0.25, color.RGBA{130, 156, 154, 255}),
@@ -345,10 +361,10 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 
 	scene.AddLights(
 		// drawables.NewNamedSphere("l1", vec3.Vec3{X: -15, Y: -1, Z: -1}, 1, color.RGBA{240, 240, 240, 255}, false),
-		drawables.NewNamedSphere("l2", vec3.Vec3{X: -20, Y: 1, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
-		drawables.NewNamedSphere("l5", vec3.Vec3{X: 20, Y: -8, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
-		drawables.NewNamedSphere("l2", vec3.Vec3{X: 1, Y: 20, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, false),
-		drawables.NewNamedSphere("l5", vec3.Vec3{X: -8, Y: -20, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, false),
+		drawables.NewNamedSphere("l2", vec3.Vec3{X: -20, Y: 1, Z: 1}, 1, color.RGBA{255, 100, 100, 255}, true, false),
+		drawables.NewNamedSphere("l5", vec3.Vec3{X: 20, Y: -8, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, true, false),
+		drawables.NewNamedSphere("l2", vec3.Vec3{X: 1, Y: 20, Z: 1}, 1, color.RGBA{199, 219, 19, 255}, true, false),
+		drawables.NewNamedSphere("l5", vec3.Vec3{X: -8, Y: -20, Z: -8}, 1, color.RGBA{200, 200, 200, 255}, true, false),
 		// drawables.NewNamedSphere("l2", vec3.Vec3{X: -15, Y: 8, Z: 8}, 1, color.RGBA{0, 255, 0, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -15, Y: -8, Z: 8}, 0.5, color.RGBA{0, 0, 255, 255}, false),
 		//drawables.NewNamedSphere("l3", vec3.Vec3{X: -10, Y: -10, Z: 10}, 0.5, color.RGBA{69, 79, 79, 255}),
@@ -363,6 +379,7 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 	)
 
 	// cam := NewCameraFOV(vec3.Vec3{X: 0, Y: 0, Z: 15}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	// cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 
 	// cam.up = vec3.UnitX()

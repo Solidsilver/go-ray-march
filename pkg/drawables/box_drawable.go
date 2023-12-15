@@ -53,3 +53,7 @@ func (b Box) Pos() vec3.Vec3 {
 func (b Box) ID() string {
 	return b.id
 }
+
+func (b Box) IsLight() bool {
+	return false
+}

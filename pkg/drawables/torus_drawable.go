@@ -58,3 +58,7 @@ func (t Torus) Equals(d Drawable) bool {
 func (t Torus) ID() string {
 	return t.id
 }
+
+func (t Torus) IsLight() bool {
+	return false
+}

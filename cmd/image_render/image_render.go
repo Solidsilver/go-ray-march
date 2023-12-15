@@ -4,7 +4,9 @@ import (
 	"errors"
 	"flag"
 	"log"
+	"os"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,13 +15,23 @@ import (
 )
 
 func main() {
-	// defer profile.Start(profile.ProfilePath(".")).Stop()
 
 	workersOpt := flag.Int("t", runtime.NumCPU(), "The number of concurrent jobs being processed")
 	dimensionsOpt := flag.String("d", "1920x1080", "The dimensions of the image to render")
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
 	outDir := flag.String("o", "./rend_out_0", "The directory to output the image to")
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal()
+		}
+		pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
+	}
 
 	dims := strings.Split(*dimensionsOpt, "x")
 	dimX := dims[0]

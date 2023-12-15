@@ -16,12 +16,24 @@ func OfSize(num float64) Vec3 {
 }
 
 func Angle(v1 Vec3, v2 Vec3) float64 {
+	val := utils.RadToDeg(math.Acos(Dot(v1, v2) / (v1.Norm() * v2.Norm())))
+	return val
+}
+
+func Angle_fast(v1 Vec3, v2 Vec3) float64 {
 	// val := utils.RadToDeg(math.Acos(Dot(v1, v2) / (v1.Norm() * v2.Norm())))
 	val := utils.RadToDeg(utils.FastAcos(Dot(v1, v2) / (v1.Norm() * v2.Norm())))
 	return val
 }
 
 func Angle2(v1 Vec3, v2 Vec3) float64 {
+	v1Unit := v1.Unit()
+	v2Unit := v2.Unit()
+	val := utils.RadToDeg(math.Acos(Dot(v1Unit, v2Unit) / (v1Unit.Norm() * v2Unit.Norm())))
+	return val
+}
+
+func Angle2_fast(v1 Vec3, v2 Vec3) float64 {
 	v1Unit := v1.Unit()
 	v2Unit := v2.Unit()
 	// val := utils.RadToDeg(math.Acos(Dot(v1Unit, v2Unit) / (v1Unit.Norm() * v2Unit.Norm())))

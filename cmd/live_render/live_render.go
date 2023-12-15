@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
@@ -193,7 +195,19 @@ func main() {
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
 	outDir := flag.String("o", "./rend_out_0", "The directory to output the image to")
 	scaling := flag.Int("s", 1, "Scale to render at")
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		fmt.Println("Writing CPU profile to: ", *cpuprofile)
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal()
+		}
+		pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
+	}
 
 	dims := strings.Split(*dimensionsOpt, "x")
 	dimX := dims[0]

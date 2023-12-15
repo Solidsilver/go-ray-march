@@ -12,6 +12,7 @@ type Drawable interface {
 	Color() color.RGBA
 	Pos() vec3.Vec3
 	ID() string
+	IsLight() bool
 }
 
 func Equals(d1, d2 Drawable) bool {

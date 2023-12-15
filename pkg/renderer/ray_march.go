@@ -13,7 +13,7 @@ type MarchResult struct {
 	Mhd       float64
 }
 
-func RayMarch(ray Ray, renderer *Renderer) MarchResult {
+func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 	scene := renderer.scene
 	totalDistTraveled := 0.0
 	curPos := ray.origin
@@ -32,15 +32,15 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 				closest = obj
 			}
 		}
-		// if !ignoreLights {
-		for _, obj := range scene.Lights {
-			dist := obj.Dist(curPos)
-			if dist < minDist {
-				minDist = dist
-				closest = obj
+		if renderer.scene.options.shadows && showLight {
+			for _, obj := range scene.Lights {
+				dist := obj.Dist(curPos)
+				if dist < minDist {
+					minDist = dist
+					closest = obj
+				}
 			}
 		}
-		// }
 
 		oldAvg := minDistAvg
 		minDistAvg -= minDistAvg / 3
@@ -48,6 +48,7 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 		minDistSlope := minDistAvg - oldAvg
 
 		if steps == MAX_STEPS {
+			// fmt.Println("MAX_STEPS")
 			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled, MINIMUM_HIT_DISTANCE}
 		}
 
