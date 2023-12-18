@@ -1,33 +1,55 @@
 package vec
 
-// type Dim = int
+import "golang.org/x/exp/constraints"
 
-// type Vec[T int] struct {
-// 	vals [T]float64
-// }
+type Number interface {
+	constraints.Integer | constraints.Float
+}
 
-// struct
+type Vec[T Number] struct {
+	vals []T
+}
 
-// // type Dim = 1
+func (v *Vec[T]) GetOrDefault(i int, val T) T {
+	if i < len(v.vals) {
+		return v.vals[i]
+	}
+	return val
+}
 
-// type Vec[T Dim] struct {
-// 	len  T
-// 	vals []float64
-// }
+func (v *Vec[T]) GetOrZero(i int) T {
+	if i < len(v.vals) {
+		return v.vals[i]
+	}
+	return 0
+}
 
-// func New(vals ...float64) *Vec {
-// 	vec := new(Vec[Dim])
-// 	vec.vals = vals
-// 	vec.len = len(vals)
-// 	return vec
-// }
+func (v *Vec[T]) Dim() int {
+	return len(v.vals)
+}
 
-// func Zero(n int) *Vec[n] {
-// 	vec := new(Vec)
-// 	vec.vals = make([]float64, n)
-// 	for i := 0; i < n; i++ {
-// 		vec.vals[i] = 0
-// 	}
-// 	vec.len = n
-// 	return vec
-// }
+func New[T Number](vals ...T) *Vec[T] {
+	vec := new(Vec[T])
+	vec.vals = vals
+	return vec
+}
+
+func Zero[T Number](n int) Vec[T] {
+	return Vec[T]{make([]T, n)}
+}
+
+func One[T Number](n int) Vec[T] {
+	vals := make([]T, n)
+	for i := 0; i < n; i++ {
+		vals[i] = 1
+	}
+	return Vec[T]{vals}
+}
+
+func OfSize[T Number](n int, val T) Vec[T] {
+	vals := make([]T, n)
+	for i := 0; i < n; i++ {
+		vals[i] = val
+	}
+	return Vec[T]{vals}
+}

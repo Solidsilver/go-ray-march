@@ -40,6 +40,7 @@ func UnitZ() Vec3 {
 	return Vec3{0, 0, 1}
 }
 
+// Return the euclidean length of the vector
 func (v Vec3) Norm() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
 }
