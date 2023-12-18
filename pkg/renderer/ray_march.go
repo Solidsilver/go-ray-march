@@ -17,14 +17,14 @@ func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 	scene := renderer.scene
 	totalDistTraveled := 0.0
 	curPos := ray.origin
-	totalMin := MAXIMUM_TRACE_DISTANCE
+	totalMin := renderer.scene.options.trace.maxDist
 	var closest drawables.Drawable
 	steps := 0
 	minDistAvg := 0.0
-	maxTraceCubed := MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE //* MAXIMUM_TRACE_DISTANCE
+	maxTraceCubed := renderer.scene.options.trace.maxDist * renderer.scene.options.trace.maxDist //* MAXIMUM_TRACE_DISTANCE
 
-	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
-		minDist := MAXIMUM_TRACE_DISTANCE
+	for totalDistTraveled < renderer.scene.options.trace.maxDist {
+		minDist := renderer.scene.options.trace.maxDist
 		for _, obj := range scene.Drawables {
 			dist := obj.Dist(curPos)
 			if dist < minDist {
@@ -47,15 +47,14 @@ func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 		minDistAvg += minDist / 3
 		minDistSlope := minDistAvg - oldAvg
 
-		if steps == MAX_STEPS {
-			// fmt.Println("MAX_STEPS")
-			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled, MINIMUM_HIT_DISTANCE}
+		if steps == renderer.scene.options.trace.maxSteps {
+			return MarchResult{closest, curPos, renderer.scene.options.trace.maxSteps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
 		}
 
-		minHitDist := MINIMUM_HIT_DISTANCE
-		if LOD {
+		minHitDist := renderer.scene.options.trace.minHitDist
+		if renderer.scene.options.trace.LOD {
 			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
-			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * MAX_HIT_DISTANCE)
+			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * renderer.scene.options.trace.maxHitDist)
 		}
 		if minDistSlope < 0 && minDist < minHitDist {
 
@@ -79,7 +78,7 @@ func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 		}
 
 	}
-	return MarchResult{nil, curPos, steps, totalDistTraveled, MINIMUM_HIT_DISTANCE}
+	return MarchResult{nil, curPos, steps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
 
 }
 

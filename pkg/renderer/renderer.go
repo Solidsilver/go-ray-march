@@ -16,14 +16,12 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const MINIMUM_HIT_DISTANCE = 0.0001
-const MAX_HIT_DISTANCE = 10.0
-const MAXIMUM_TRACE_DISTANCE = 5000.0
-const MAX_STEPS = 100000
+// const MINIMUM_HIT_DISTANCE = 0.0001
+// const MAX_HIT_DISTANCE = 10.0
+// const MAXIMUM_TRACE_DISTANCE = 5000.0
+// const MAX_STEPS = 100000
 
-var MAX_AMBIENT_STEPS = math.Sqrt(MINIMUM_HIT_DISTANCE*10)/10 + 150
-
-const LOD = false
+// var MAX_AMBIENT_STEPS = math.Sqrt(MINIMUM_HIT_DISTANCE*10)/10 + 150
 
 // var BG_COLOR = color.RGBA{255, 255, 255, 255}
 var BG_COLOR = color.RGBA{198, 226, 253, 255}
@@ -38,65 +36,6 @@ type Renderer struct {
 	camera *Camera
 	isDone atomic.Bool
 	Reset  atomic.Bool
-}
-
-type LightingOpts struct {
-	shadows  bool
-	vignette struct {
-		enabled  bool
-		strength float64
-	}
-	bg struct {
-		color color.RGBA
-		show  bool
-	}
-	ao struct {
-		enabled  bool
-		inverted bool
-	}
-	dropoff struct {
-		enabled  bool
-		color    color.RGBA
-		distance float64
-	}
-}
-
-func DefaultLightingOpts() LightingOpts {
-	return LightingOpts{
-		shadows: true,
-		vignette: struct {
-			enabled  bool
-			strength float64
-		}{
-			enabled:  false,
-			strength: 0.05,
-		},
-		bg: struct {
-			color color.RGBA
-			show  bool
-		}{
-			color: BG_COLOR,
-			show:  true,
-		},
-		ao: struct {
-			enabled  bool
-			inverted bool
-		}{
-			enabled:  true,
-			inverted: false,
-		},
-		dropoff: struct {
-			enabled  bool
-			color    color.RGBA
-			distance float64
-		}{
-			enabled: true,
-			color: color.RGBA{
-				0, 0, 0, 0,
-			},
-			distance: MAXIMUM_TRACE_DISTANCE / 25,
-		},
-	}
 }
 
 func NewRenderer(scene *Scene, camera *Camera) Renderer {
@@ -180,9 +119,9 @@ func CalculateLighting2(marchRslt MarchResult, screenPos Point, renderer *Render
 		if renderer.scene.options.ao.enabled {
 			var ao float64
 			if renderer.scene.options.ao.inverted {
-				ao = math.Min(float64(marchRslt.Steps)/float64(MAX_AMBIENT_STEPS-1), 0.95) - 1.0
+				ao = math.Min(float64(marchRslt.Steps)/float64(renderer.scene.options.ao.maxSteps-1), 0.95) - 1.0
 			} else {
-				ao = 1.0 - math.Min(float64(marchRslt.Steps)/float64(MAX_AMBIENT_STEPS-1), 0.95)
+				ao = 1.0 - math.Min(float64(marchRslt.Steps)/float64(renderer.scene.options.ao.maxSteps-1), 0.95)
 			}
 
 			pxColorVec = pxColorVec.Mult(ao)
@@ -197,7 +136,7 @@ func CalculateLighting2(marchRslt MarchResult, screenPos Point, renderer *Render
 	// }
 
 	if renderer.scene.options.dropoff.enabled {
-		dropoffDist := math.Min(renderer.scene.options.dropoff.distance, MAXIMUM_TRACE_DISTANCE)
+		dropoffDist := math.Min(renderer.scene.options.dropoff.distance, renderer.scene.options.trace.maxDist)
 		distFrac := math.Min((marchRslt.Distance)/float64(dropoffDist), 1)
 		dropoff := 1 - math.Pow(distFrac, 2)
 		blendColor := vec3.RGBAToVec3(renderer.scene.options.dropoff.color)
