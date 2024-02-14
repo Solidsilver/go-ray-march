@@ -9,7 +9,6 @@ import (
 
 	"github.com/Solidsilver/go-ray-march/pkg/utils"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
-	"github.com/rs/zerolog/log"
 )
 
 type Camera struct {
@@ -31,7 +30,7 @@ type Camera struct {
 
 type CameraOpts struct {
 	Position vec3.Vec3
-	Size     utils.Vec2
+	Size     utils.Vec2[float64]
 	Fov      float64
 	ImgDir   string
 }
@@ -55,10 +54,11 @@ func NewCameraOpts(opts CameraOpts) *Camera {
 	sizeX := int(opts.Size.X())
 	sizeY := int(opts.Size.Y())
 	bgImg := image.NewRGBA(image.Rect(0, 0, sizeX, sizeY))
+	// bgImg := image.NewRGBA(image.Rect(0, 0, 0, 0))
 	cam := new(Camera)
 	cam.Pos = opts.Position
-	cam.Dir = vec3.UnitX()
-	cam.up = vec3.UnitZ()
+	cam.Dir = vec3.UnitX
+	cam.up = vec3.UnitZ
 
 	cam.SizeX = sizeX
 	cam.SizeY = sizeY
@@ -75,6 +75,11 @@ func NewCameraOpts(opts CameraOpts) *Camera {
 	return cam
 }
 
+// Dim returns the dimensions of the camera in pixels
+func (c *Camera) Dim() utils.Vec2[int] {
+	return utils.NewVec2(c.SizeX, c.SizeY)
+}
+
 func (c *Camera) FlushToDisk() {
 	os.Mkdir(c.flushDir, os.ModePerm)
 	c.flushMtx.Lock()
@@ -84,7 +89,7 @@ func (c *Camera) FlushToDisk() {
 	imgName := fmt.Sprintf("%s/render%03d.png", c.flushDir, curFrame)
 	// log.Info().Msgf("Encoding to path: %s", imgName)
 	utils.EncodePNGToPath(imgName, c.Image)
-	log.Info().Msgf("Encoded to path: %s", imgName)
+	// log.Info().Msgf("Encoded to path: %s", imgName)
 }
 
 func (c *Camera) Reset() {
@@ -106,12 +111,12 @@ func (c *Camera) RayForPixel(px Point) Ray {
 	fovHalfRad := c.fov_hRad / 2
 	adjX := float64(c.centerOffset.X) / math.Tan(fovHalfRad)
 	vecX := vec3.Vec3{X: float64(relPxPos.X), Y: adjX, Z: 0}
-	vecX = vecX.Unit()
+	vecX = vecX.ToUnit()
 
 	fovYHalfRad := c.fov_vRad / 2
 	adjY := float64(c.centerOffset.Y) / math.Tan(fovYHalfRad)
 	vecY := vec3.Vec3{X: float64(relPxPos.Y), Y: adjY, Z: 0}
-	vecY = vecY.Unit()
+	vecY = vecY.ToUnit()
 
 	right := c.up.Cross(c.Dir).Mult(vecX.X)
 	up := c.up.Mult(vecY.X)

@@ -1,11 +1,5 @@
 package utils
 
-// struct LCGRand {
-// 	seed uint32
-// 	m uint32
-
-// }
-
 func lgc(a, c, m, seed uint32) uint32 {
 	return (a*seed + c) % m
 }

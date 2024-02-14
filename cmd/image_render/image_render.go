@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 )
@@ -21,6 +22,7 @@ func main() {
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
 	outDir := flag.String("o", "./rend_out_0", "The directory to output the image to")
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
+	memprofile := flag.String("memprofile", "", "write memory profile to this file")
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -58,10 +60,18 @@ func main() {
 
 	r := renderer.NewDefaultRenderScene(rOps)
 	// renderer.Render3(r, rOps.Workers)
-	// startTime := time.Now()
-	r.Render2(rOps.Workers, &sync.WaitGroup{})
-	// renderDuration := time.Since(startTime)
-	// log.Println("Rendered in: ", renderDuration.String())
+	startTime := time.Now()
+	r.RenderStatic(rOps.Workers, &sync.WaitGroup{})
+	log.Println("Rendered in: ", time.Since(startTime).String())
 	r.GetCamera().FlushToDisk()
-	// log.Println("Flushed to disk in: ", time.Since(startTime).String())
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.WriteHeapProfile(f)
+		f.Close()
+		return
+	}
 }

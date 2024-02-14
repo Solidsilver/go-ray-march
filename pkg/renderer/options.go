@@ -54,6 +54,7 @@ type TraceOpts struct {
 	maxHitDist float64
 	maxSteps   int
 	maxDist    float64
+	fastMath   bool
 }
 
 func (to TraceOpts) String() string {
@@ -69,9 +70,14 @@ type LightingOpts struct {
 	trace    TraceOpts
 }
 
+func (lopt LightingOpts) WithShadows(setShadows bool) LightingOpts {
+	lopt.shadows = setShadows
+	return lopt
+}
+
 func DefaultLightingOpts() LightingOpts {
 	maxTraceDist := 5000.0
-	minHitDist := 0.0001
+	minHitDist := 0.0005
 	lopts := LightingOpts{
 		shadows: true,
 		vignette: VignetteOpts{
@@ -88,18 +94,19 @@ func DefaultLightingOpts() LightingOpts {
 			maxSteps: math.Sqrt(maxTraceDist*10)/10 + 150,
 		},
 		dropoff: DropoffOpts{
-			enabled: true,
+			enabled: false,
 			color: color.RGBA{
 				0, 0, 0, 0,
 			},
 			distance: maxTraceDist / 25,
 		},
 		trace: TraceOpts{
-			LOD:        true,
+			LOD:        false,
 			minHitDist: minHitDist,
 			maxHitDist: 10.0,
 			maxSteps:   100000,
 			maxDist:    maxTraceDist,
+			fastMath:   false,
 		},
 	}
 
