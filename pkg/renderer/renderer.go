@@ -277,12 +277,35 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *pb.Pro
 
 }
 
+
+var rmwRangeMap = make(map[int][]int)
+var rngMtx sync.RWMutex
+
+func setRangePerm(id int, val []int) {
+    rngMtx.Lock()
+    rmwRangeMap[id] = val
+    rngMtx.Unlock()
+}
+
+func getRangePerm(id int) (val []int, ok bool) {
+    rngMtx.RLock()
+    val, ok = rmwRangeMap[id]
+    rngMtx.RUnlock()
+    return
+}
+
 func RayMarchWorkerLighting6(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	rangeSize := renderer.camera.Size() / int64(workers)
+    perm, ok := getRangePerm(id)
+    if !ok {
+        rangeSize := int(renderer.camera.Size() / int64(workers))
+        perm = rand.Perm(rangeSize)
+        setRangePerm(id, perm)
+    }
 
-	for _, value := range rand.Perm(int(rangeSize)) {
+
+	for _, value := range perm {
 		if renderer.Reset.Load() {
 			return
 		}
@@ -347,7 +370,7 @@ func Render(renderer *Renderer, workers int) {
 		pb.OptionUseANSICodes(true),
 	)
 
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		wg.Add(1)
 		go RayMarchWorkerLighting3(i, workers, renderer, pb, wg)
 	}
@@ -368,7 +391,7 @@ func (renderer *Renderer) Render2(workers int, wg *sync.WaitGroup) {
 
 	var wg2 sync.WaitGroup
 
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		wg2.Add(1)
 		go RayMarchWorkerLighting6(i, workers, renderer, &wg2)
 	}
@@ -392,7 +415,7 @@ func (renderer *Renderer) RenderStatic(workers int, wg *sync.WaitGroup) {
 
 	var wg2 sync.WaitGroup
 
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		wg2.Add(1)
 		go RayMarchWorkerLightingStatic(i, workers, renderer, &wg2)
 	}

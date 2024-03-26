@@ -14,6 +14,9 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 	"github.com/fstanis/screenresolution"
@@ -187,7 +190,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	defer profile.Start(profile.ProfilePath(".")).Stop()
+	defer profile.Start(profile.MemProfile).Stop()
 	resolution := screenresolution.GetPrimary()
 	defaultRes := fmt.Sprintf("%dx%d", resolution.Width, resolution.Height)
 	workersOpt := flag.Int("t", runtime.NumCPU(), "The number of concurrent jobs being processed")
@@ -208,6 +211,9 @@ func main() {
 
 		defer pprof.StopCPUProfile()
 	}
+	go func() {
+		http.ListenAndServe(":8080", nil)
+	}()
 
 	dims := strings.Split(*dimensionsOpt, "x")
 	dimX := dims[0]

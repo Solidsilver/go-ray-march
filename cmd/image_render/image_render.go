@@ -12,11 +12,14 @@ import (
 	"sync"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 )
 
 func main() {
 
+	//defer profile.Start(profile.MemProfile).Stop()
 	workersOpt := flag.Int("t", runtime.NumCPU(), "The number of concurrent jobs being processed")
 	dimensionsOpt := flag.String("d", "1920x1080", "The dimensions of the image to render")
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
@@ -34,6 +37,9 @@ func main() {
 
 		defer pprof.StopCPUProfile()
 	}
+	// go func() {
+	// 	http.ListenAndServe(":8080", nil)
+	// }()
 
 	dims := strings.Split(*dimensionsOpt, "x")
 	dimX := dims[0]
