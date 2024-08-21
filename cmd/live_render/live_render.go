@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -14,7 +15,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
@@ -38,7 +38,6 @@ type Game struct {
 }
 
 func NewGame(opts renderer.RenderOpts) *Game {
-
 	height, width := getWindowSize(opts)
 	g := &Game{
 		offscreen:    ebiten.NewImage(opts.DimX, opts.DimY),
@@ -249,6 +248,7 @@ func main() {
 	ebiten.SetScreenClearedEveryFrame(false)
 	ebiten.SetTPS(ebiten.SyncWithFPS)
 	ebiten.SetWindowTitle("Ray Marcher")
+
 	go game.renderer.Render2(rOps.Workers, game.renderWG)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

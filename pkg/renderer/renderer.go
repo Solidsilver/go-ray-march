@@ -277,33 +277,31 @@ func RayMarchWorkerLighting3(id int, workers int, renderer *Renderer, pb *pb.Pro
 
 }
 
-
 var rmwRangeMap = make(map[int][]int)
 var rngMtx sync.RWMutex
 
 func setRangePerm(id int, val []int) {
-    rngMtx.Lock()
-    rmwRangeMap[id] = val
-    rngMtx.Unlock()
+	rngMtx.Lock()
+	rmwRangeMap[id] = val
+	rngMtx.Unlock()
 }
 
 func getRangePerm(id int) (val []int, ok bool) {
-    rngMtx.RLock()
-    val, ok = rmwRangeMap[id]
-    rngMtx.RUnlock()
-    return
+	rngMtx.RLock()
+	val, ok = rmwRangeMap[id]
+	rngMtx.RUnlock()
+	return
 }
 
 func RayMarchWorkerLighting6(id int, workers int, renderer *Renderer, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-    perm, ok := getRangePerm(id)
-    if !ok {
-        rangeSize := int(renderer.camera.Size() / int64(workers))
-        perm = rand.Perm(rangeSize)
-        setRangePerm(id, perm)
-    }
-
+	perm, ok := getRangePerm(id)
+	if !ok {
+		rangeSize := int(renderer.camera.Size() / int64(workers))
+		perm = rand.Perm(rangeSize)
+		setRangePerm(id, perm)
+	}
 
 	for _, value := range perm {
 		if renderer.Reset.Load() {
@@ -382,6 +380,7 @@ func Render(renderer *Renderer, workers int) {
 	renderer.Reset.Store(false)
 }
 
+// TODO: Rename render functions to be more clear
 func (renderer *Renderer) Render2(workers int, wg *sync.WaitGroup) {
 	renderer.isDone.Store(false)
 	// startTime := time.Now()
