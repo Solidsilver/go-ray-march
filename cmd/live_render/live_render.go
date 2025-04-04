@@ -8,17 +8,27 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
+	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 	"github.com/fstanis/screenresolution"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/pkg/profile"
+	"golang.org/x/exp/slices"
 )
 
 type Game struct {
-	offscreen    *ebiten.Image
-	renderer     *renderer.Renderer
-	windowHeight int
-	windowWidth  int
+	offscreen        *ebiten.Image
+	renderer         *renderer.Renderer
+	windowHeight     int
+	windowWidth      int
+	renderWG         *sync.WaitGroup
+	rops             renderer.RenderOpts
+	keys             []ebiten.Key
+	isProcessingMove atomic.Bool
 }
 
 func NewGame(opts renderer.RenderOpts) *Game {
@@ -29,6 +39,8 @@ func NewGame(opts renderer.RenderOpts) *Game {
 		renderer:     renderer.NewDefaultRenderScene(opts),
 		windowWidth:  width,
 		windowHeight: height,
+		renderWG:     &sync.WaitGroup{},
+		rops:         opts,
 	}
 	return g
 }
@@ -65,21 +77,105 @@ func getWindowSize(opts renderer.RenderOpts) (height, width int) {
 // func color()
 
 func (gm *Game) updateOffscreen() {
-	if !gm.renderer.GetStatus() {
-		// atomic.StoreUint32(&gm.isUpdating, 1)
-		gm.offscreen.WritePixels(gm.renderer.GetCamera().Image.Pix)
-		// atomic.StoreUint32(&gm.isUpdating, 0)
+	// if !gm.renderer.GetStatus() {
+	// atomic.StoreUint32(&gm.isUpdating, 1)
+	gm.offscreen.WritePixels(gm.renderer.GetCamera().Image.Pix)
+	// atomic.StoreUint32(&gm.isUpdating, 0)
+	// }
+}
+
+var validKeys = []ebiten.Key{
+	ebiten.KeyArrowUp,
+	ebiten.KeyArrowDown,
+	ebiten.KeyArrowLeft,
+	ebiten.KeyArrowRight,
+	ebiten.KeyW,
+	ebiten.KeyS,
+	ebiten.KeyA,
+	ebiten.KeyD,
+}
+
+func isMvtKeyInList(keys []ebiten.Key) bool {
+	for _, key := range keys {
+		if slices.Contains(validKeys, key) {
+			return true
+		}
 	}
+	return false
 }
 
 func (g *Game) Update() error {
-	// if atomic.LoadUint32(&g.isUpdating) == 0 {
-	g.updateOffscreen()
+	g.keys = inpututil.AppendJustPressedKeys(g.keys[:0])
+	// if ebiten.IsKeyPressed(ebiten.KeyP) {
+	// 	go g.renderer.GetCamera().FlushToDisk()
 	// }
+	if slices.Contains(g.keys, ebiten.KeyP) {
+		go g.renderer.GetCamera().FlushToDisk()
+	}
+
+	if !g.isProcessingMove.Load() /* && !g.renderer.Reset.Load() */ && isMvtKeyInList(g.keys) {
+		g.isProcessingMove.Store(true)
+
+		if !g.renderer.IsDone() {
+			g.renderer.Reset.Store(true)
+			g.renderWG.Wait()
+		}
+		g.renderer.GetCamera().Reset()
+
+		moveAmt := 0.05
+
+		if ebiten.IsKeyPressed(ebiten.KeyShift) {
+			moveAmt = 0.005
+		}
+
+		if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+			g.renderer.GetCamera().MoveUp(moveAmt)
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+			g.renderer.GetCamera().MoveDown(moveAmt)
+		}
+
+		if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+			scene := g.renderer.GetScene()
+			bulb := scene.Drawables[0].(drawables.MandelBulb)
+			bulb.Power += 0.1
+			fmt.Printf("Power: %f\n", bulb.Power)
+			scene.Drawables[0] = bulb
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+			scene := g.renderer.GetScene()
+			bulb := scene.Drawables[0].(drawables.MandelBulb)
+			bulb.Power -= 0.1
+			fmt.Printf("Power: %f\n", bulb.Power)
+			scene.Drawables[0] = bulb
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyA) {
+			g.renderer.GetCamera().MoveLeft(moveAmt)
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyD) {
+			g.renderer.GetCamera().MoveRight(moveAmt)
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyW) {
+			g.renderer.GetCamera().MoveForward(moveAmt)
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyS) {
+			g.renderer.GetCamera().MoveBackward(moveAmt)
+		}
+
+		// g.renderer.Reset = false
+
+		go g.renderer.Render2(g.rops.Workers, g.renderWG)
+		g.isProcessingMove.Store(false)
+
+	} else {
+		g.updateOffscreen()
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	screen.Clear()
 	screen.DrawImage(g.offscreen, nil)
 }
 
@@ -88,6 +184,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
+	defer profile.Start(profile.ProfilePath(".")).Stop()
 	resolution := screenresolution.GetPrimary()
 	defaultRes := fmt.Sprintf("%dx%d", resolution.Width, resolution.Height)
 	workersOpt := flag.Int("t", 4, "The number of concurrent jobs being processed")
@@ -131,7 +228,7 @@ func main() {
 	ebiten.SetScreenClearedEveryFrame(false)
 	ebiten.SetTPS(ebiten.SyncWithFPS)
 	ebiten.SetWindowTitle("Ray Marcher")
-	go renderer.Render(game.renderer, rOps.Workers)
+	go game.renderer.Render2(rOps.Workers, game.renderWG)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}

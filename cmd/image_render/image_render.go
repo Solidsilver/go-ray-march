@@ -6,12 +6,14 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
+	"github.com/pkg/profile"
 )
 
 func main() {
-	// defer profile.Start(profile.ProfilePath(".")).Stop()
+	defer profile.Start(profile.ProfilePath(".")).Stop()
 	workersOpt := flag.Int("t", 4, "The number of concurrent jobs being processed")
 	dimensionsOpt := flag.String("d", "1920x1080", "The dimensions of the image to render")
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
@@ -42,6 +44,11 @@ func main() {
 	log.Println("Rendering with options: ", rOps.String())
 
 	r := renderer.NewDefaultRenderScene(rOps)
-	renderer.Render(r, rOps.Workers)
+	// renderer.Render3(r, rOps.Workers)
+	// startTime := time.Now()
+	r.Render2(rOps.Workers, &sync.WaitGroup{})
+	// renderDuration := time.Since(startTime)
+	// log.Println("Rendered in: ", renderDuration.String())
 	r.GetCamera().FlushToDisk()
+	// log.Println("Flushed to disk in: ", time.Since(startTime).String())
 }
