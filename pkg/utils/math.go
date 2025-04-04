@@ -2,6 +2,8 @@ package utils
 
 import (
 	"math"
+
+	"golang.org/x/exp/constraints"
 )
 
 func RadToDeg(rad float64) float64 {
@@ -22,32 +24,37 @@ func SigLocal(dist float64, step int, smooth float64) float64 {
 	return Sig(dist, 1, b, stepF, stepF)
 }
 
-func Max(f1, f2, f3 float64) float64 {
-	return math.Max(f1, math.Max(f2, f3))
+// Max returns the maximum number
+func Max[T Number](n1, n2 T) T {
+	if n1 > n2 {
+		return n1
+	}
+	return n2
 }
 
-func MaxN(nums ...float64) float64 {
+// MaxN returns the maximum number
+// in a list of numbers
+func MaxN[T Number](nums ...T) T {
 	max := nums[0]
 	for i, num := range nums {
 		if i != 0 {
-			max = math.Max(max, num)
+			max = Max(max, num)
 		}
 	}
 	return max
 }
 
-// func maxN()
-
-// func Min[T constraints.Ordered](a, b T) T {
-// 	if a < b {
-// 		return a
-// 	}
-// 	return b
-// }
-
-func Abs(val int) int {
+func Abs[T SignedNumber](val T) T {
 	if val < 0 {
-		return val * -1
+		return val * -1.0
 	}
 	return val
+}
+
+type SignedNumber interface {
+	constraints.Signed | constraints.Float
+}
+
+type Number interface {
+	constraints.Integer | constraints.Float
 }

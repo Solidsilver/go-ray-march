@@ -1,7 +1,6 @@
 package drawables
 
 import (
-	"fmt"
 	"image/color"
 	"math/rand"
 
@@ -11,23 +10,22 @@ import (
 
 type Torus struct {
 	Center    vec3.Vec3
-	Diameters utils.Vec2
+	Diameters utils.Vec2[float64]
 	color     color.RGBA
-	id        string
+	id        int64
 }
 
 func NewTorus(pos vec3.Vec3, majorD, minorD float64, color color.RGBA) Torus {
-	idNum := rand.Intn(1000)
-	id := fmt.Sprintf("%s-%d", "tor", idNum)
+
 	return Torus{
 		Center:    pos,
 		Diameters: utils.NewVec2(majorD, minorD),
 		color:     color,
-		id:        id,
+		id:        rand.Int63(),
 	}
 }
 
-func NewNamedTorus(id string, pos vec3.Vec3, majorD, minorD float64, color color.RGBA) Torus {
+func NewNamedTorus(id int64, pos vec3.Vec3, majorD, minorD float64, color color.RGBA) Torus {
 	return Torus{
 		Center:    pos,
 		Diameters: utils.NewVec2(majorD, minorD),
@@ -43,18 +41,26 @@ func (t Torus) Dist(pt vec3.Vec3) float64 {
 	// return 0.0
 }
 
+func (t Torus) FastDist(pt vec3.Vec3) float64 {
+	return t.Dist(pt)
+}
+
 func (t Torus) Color() color.RGBA {
 	return t.color
+}
+
+func (t Torus) ColorVec() vec3.Vec3 {
+	return vec3.RGBAToVec3(t.color)
 }
 
 func (t Torus) Pos() vec3.Vec3 {
 	return t.Center
 }
 
-func (t Torus) Equals(d Drawable) bool {
-	return t.id == d.ID()
+func (t Torus) ID() int64 {
+	return t.id
 }
 
-func (t Torus) ID() string {
-	return t.id
+func (t Torus) IsLight() bool {
+	return false
 }
