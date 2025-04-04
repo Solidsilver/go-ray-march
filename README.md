@@ -10,13 +10,13 @@ This is a multi-threaded ray marching renderer written in Golang that allows for
 - Different shapes (Sphere, Cube, MandleBulb)
 - Lighting
 - Image export
+- Real-time rendering preview window
+- Add ability to create videos
 
 ## Future Goals
 
 - Add more advanced shading/lighting & reflections
 - Add scene builder outside of renderer code
-- Add ability to create videos
-- Real-time rendering preview window
 - Basic GUI
 
 ## Requirements
