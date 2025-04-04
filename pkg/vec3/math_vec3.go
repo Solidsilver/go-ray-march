@@ -4,6 +4,8 @@ import (
 	"math"
 )
 
+// Add adds the two vectors component-wise
+// and returns the resultant vector
 func (v1 Vec3) Add(v2 Vec3) Vec3 {
 	return Vec3{
 		v1.X + v2.X,
@@ -12,6 +14,8 @@ func (v1 Vec3) Add(v2 Vec3) Vec3 {
 	}
 }
 
+// Sub subtracts the two vectors component-wise
+// and returns the resultant vector
 func (v1 Vec3) Sub(v2 Vec3) Vec3 {
 	return Vec3{
 		v1.X - v2.X,
@@ -20,6 +24,8 @@ func (v1 Vec3) Sub(v2 Vec3) Vec3 {
 	}
 }
 
+// Mult multiplies the vector by the given scalar
+// and returns the result
 func (v Vec3) Plus(num float64) Vec3 {
 	v.X += num
 	v.Y += num
@@ -27,6 +33,8 @@ func (v Vec3) Plus(num float64) Vec3 {
 	return v
 }
 
+// Sub subtracts the vector by the given scalar
+// and returns the resultant vector
 func (v Vec3) Minus(num float64) Vec3 {
 	v.X -= num
 	v.Y -= num
@@ -34,6 +42,8 @@ func (v Vec3) Minus(num float64) Vec3 {
 	return v
 }
 
+// Multiplies the vector by the given scalar
+// and returns the resultant vector
 func (v Vec3) Mult(num float64) Vec3 {
 	v.X = v.X * num
 	v.Y = v.Y * num
@@ -41,6 +51,8 @@ func (v Vec3) Mult(num float64) Vec3 {
 	return v
 }
 
+// MultComp multiplies each component
+// of the vectors together and returns the result
 func (v1 Vec3) MultComp(v2 Vec3) Vec3 {
 	v1.X *= v2.X
 	v1.Y *= v2.Y
@@ -48,6 +60,8 @@ func (v1 Vec3) MultComp(v2 Vec3) Vec3 {
 	return v1
 }
 
+// Div divides each component of the vector by the given scalar
+// and returns the resultant vector
 func (v Vec3) Div(num float64) Vec3 {
 	v.X = v.X / num
 	v.Y = v.Y / num
@@ -55,10 +69,12 @@ func (v Vec3) Div(num float64) Vec3 {
 	return v
 }
 
+// Dot returns the dot product of the two vectors
 func Dot(v1, v2 Vec3) float64 {
 	return v1.X*v2.X + v1.Y*v2.Y + v1.Z*v2.Z
 }
 
+// Cross returns the cross product of the two vectors
 func (v1 Vec3) Cross(v2 Vec3) Vec3 {
 	v := Vec3{
 		v1.Y*v2.Z - v1.Z*v2.Y,
@@ -68,6 +84,8 @@ func (v1 Vec3) Cross(v2 Vec3) Vec3 {
 	return v
 }
 
+// Abs returns the absolute value of the vector
+// component-wise
 func (p Vec3) Abs() Vec3 {
 	return Vec3{
 		math.Abs(p.X),
@@ -76,11 +94,13 @@ func (p Vec3) Abs() Vec3 {
 	}
 }
 
-func (v Vec3) Unit() Vec3 {
+// Returns the vector divided by its norm
+func (v Vec3) ToUnit() Vec3 {
 	vNorm := v.Norm()
 	return v.Div(vNorm)
 }
 
+// Calculates the square root of the vector component-wise
 func (v Vec3) Sqrt() Vec3 {
 	v.X = math.Sqrt(v.X)
 	v.Y = math.Sqrt(v.Y)

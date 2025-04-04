@@ -9,9 +9,12 @@ import (
 
 type Drawable interface {
 	Dist(pt vec3.Vec3) float64
+	FastDist(pt vec3.Vec3) float64
 	Color() color.RGBA
+	ColorVec() vec3.Vec3
 	Pos() vec3.Vec3
-	ID() string
+	ID() int64
+	IsLight() bool
 }
 
 func Equals(d1, d2 Drawable) bool {

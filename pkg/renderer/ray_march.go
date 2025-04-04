@@ -1,6 +1,8 @@
 package renderer
 
 import (
+	"math"
+
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/vec3"
 )
@@ -13,48 +15,59 @@ type MarchResult struct {
 	Mhd       float64
 }
 
-func RayMarch(ray Ray, renderer *Renderer) MarchResult {
+func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 	scene := renderer.scene
 	totalDistTraveled := 0.0
 	curPos := ray.origin
-	totalMin := MAXIMUM_TRACE_DISTANCE
+	totalMin := renderer.scene.options.trace.maxDist
 	var closest drawables.Drawable
 	steps := 0
 	minDistAvg := 0.0
-	maxTraceCubed := MAXIMUM_TRACE_DISTANCE * MAXIMUM_TRACE_DISTANCE //* MAXIMUM_TRACE_DISTANCE
+	maxTraceCubed := renderer.scene.options.trace.maxDist * renderer.scene.options.trace.maxDist //* MAXIMUM_TRACE_DISTANCE
 
-	for totalDistTraveled < MAXIMUM_TRACE_DISTANCE {
-		minDist := MAXIMUM_TRACE_DISTANCE
+	for totalDistTraveled < renderer.scene.options.trace.maxDist {
+		minDist := renderer.scene.options.trace.maxDist
 		for _, obj := range scene.Drawables {
-			dist := obj.Dist(curPos)
+			dist := 0.0
+			if renderer.scene.options.trace.fastMath {
+				dist = obj.FastDist(curPos)
+			} else {
+				dist = obj.Dist(curPos)
+			}
+			// dist := obj.Dist(curPos)
 			if dist < minDist {
 				minDist = dist
 				closest = obj
 			}
 		}
-		// if !ignoreLights {
-		for _, obj := range scene.Lights {
-			dist := obj.Dist(curPos)
-			if dist < minDist {
-				minDist = dist
-				closest = obj
+		if renderer.scene.options.shadows && showLight {
+			for _, obj := range scene.Lights {
+				dist := 0.0
+				if renderer.scene.options.trace.fastMath {
+					dist = obj.FastDist(curPos)
+				} else {
+					dist = obj.Dist(curPos)
+				}
+				if dist < minDist {
+					minDist = dist
+					closest = obj
+				}
 			}
 		}
-		// }
 
 		oldAvg := minDistAvg
 		minDistAvg -= minDistAvg / 3
 		minDistAvg += minDist / 3
 		minDistSlope := minDistAvg - oldAvg
 
-		if steps == MAX_STEPS {
-			return MarchResult{closest, curPos, MAX_STEPS, totalDistTraveled, MINIMUM_HIT_DISTANCE}
+		if steps == renderer.scene.options.trace.maxSteps {
+			return MarchResult{closest, curPos, renderer.scene.options.trace.maxSteps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
 		}
 
-		minHitDist := MINIMUM_HIT_DISTANCE
-		if LOD {
+		minHitDist := renderer.scene.options.trace.minHitDist
+		if renderer.scene.options.trace.LOD {
 			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
-			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * MAX_HIT_DISTANCE)
+			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * renderer.scene.options.trace.maxHitDist)
 		}
 		if minDistSlope < 0 && minDist < minHitDist {
 
@@ -78,20 +91,124 @@ func RayMarch(ray Ray, renderer *Renderer) MarchResult {
 		}
 
 	}
-	return MarchResult{nil, curPos, steps, totalDistTraveled, MINIMUM_HIT_DISTANCE}
+	return MarchResult{nil, curPos, steps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
 
 }
 
-func SurfaceNormal(p vec3.Vec3, obj drawables.Drawable, epsilon float64) vec3.Vec3 {
-	// epsilon := 0.0001 // arbitrary — should be smaller than any surface detail in your distance function, but not so small as to get lost in float precision
-	centerDistance := obj.Dist(p)
-	grad := vec3.Vec3{
-		X: obj.Dist(p.Add(vec3.Vec3{X: epsilon, Y: 0, Z: 0})),
-		Y: obj.Dist(p.Add(vec3.Vec3{X: 0, Y: epsilon, Z: 0})),
-		Z: obj.Dist(p.Add(vec3.Vec3{X: 0, Y: 0, Z: epsilon})),
-	}
-	normal := grad.Minus(centerDistance)
-	normal = normal.Div(epsilon)
+func RayMarchP(ray Ray, renderer *Renderer, showLight bool) MarchResult {
+	// scene := renderer.scene
+	// inside := false
+	totalDistTraveled := 0.0
+	curPos := vec3.NewCp(ray.origin)
+	totalMin := renderer.scene.options.trace.maxDist
+	var closest drawables.Drawable
+	steps := 0
+	minDistAvg := 0.0
+	maxTraceCubed := renderer.scene.options.trace.maxDist * renderer.scene.options.trace.maxDist //* MAXIMUM_TRACE_DISTANCE
 
-	return normal
+	for totalDistTraveled < renderer.scene.options.trace.maxDist {
+		minDist := renderer.scene.options.trace.maxDist
+		for _, obj := range renderer.scene.Drawables {
+			dist := 0.0
+			if renderer.scene.options.trace.fastMath {
+				dist = obj.FastDist(*curPos)
+			} else {
+				dist = obj.Dist(*curPos)
+			}
+			// dist := obj.Dist(curPos)
+			if dist < minDist {
+				minDist = dist
+				closest = obj
+			}
+		}
+		if renderer.scene.options.shadows && showLight {
+			for _, obj := range renderer.scene.Lights {
+				dist := 0.0
+				if renderer.scene.options.trace.fastMath {
+					dist = obj.FastDist(*curPos)
+				} else {
+					dist = obj.Dist(*curPos)
+				}
+				if dist < minDist {
+					minDist = dist
+					closest = obj
+				}
+			}
+		}
+
+		// if steps == 0 && minDist < 0 {
+		// 	inside = true
+		// }
+		// if minDist < 0 &&
+		//  {
+		// 	minDist = -minDist
+		// }
+
+		oldAvg := minDistAvg
+		minDistAvg -= minDistAvg / 3
+		minDistAvg += minDist / 3
+		minDistSlope := minDistAvg - oldAvg
+
+		if steps == renderer.scene.options.trace.maxSteps {
+			return MarchResult{closest, *curPos, renderer.scene.options.trace.maxSteps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
+		}
+
+		minHitDist := renderer.scene.options.trace.minHitDist
+		if renderer.scene.options.trace.LOD {
+			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
+			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * renderer.scene.options.trace.maxHitDist)
+		}
+		if minDistSlope < 0 && minDist < minHitDist {
+
+			// retPos := curPos
+			if minDist < 0 {
+				moveBackMinDist := ray.dir.Mult(minHitDist)
+				curPos.SubSet(&moveBackMinDist)
+				// retPos = curPos.Add(ray.dir.Mult(minDist))
+				// retPos = retPos.Sub(ray.dir.Mult(minHitDist))
+			}
+
+			return MarchResult{closest, *curPos, steps, totalDistTraveled, minHitDist}
+		}
+		distP := minDist * 0.95
+
+		moveForwardMinDist := ray.dir.Mult(distP)
+		curPos.AddSet(&moveForwardMinDist)
+		steps++
+
+		totalDistTraveled += distP
+		// if minDist < totalMin {
+		// 	totalMin = minDist
+
+		// }
+		totalMin = math.Min(totalMin, minDist)
+
+	}
+	return MarchResult{nil, *curPos, steps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
+
+}
+
+func SurfaceNormal(hitRslt MarchResult, fast bool) vec3.Vec3 {
+	obj := hitRslt.HitObject
+	dx := hitRslt.HitPos.Add(vec3.NewX(hitRslt.Mhd))
+	dy := hitRslt.HitPos.Add(vec3.NewY(hitRslt.Mhd))
+	dz := hitRslt.HitPos.Add(vec3.NewZ(hitRslt.Mhd))
+	var normal *vec3.Vec3
+	switch fast {
+	case true:
+		normal = vec3.NewP(
+			obj.FastDist(dx),
+			obj.FastDist(dy),
+			obj.FastDist(dz),
+		)
+	case false:
+		normal = vec3.NewP(
+			obj.Dist(dx),
+			obj.Dist(dy),
+			obj.Dist(dz),
+		)
+	}
+	normal.MinusSet(hitRslt.Distance)
+	normal.ToUnitSet()
+	return *normal
 }

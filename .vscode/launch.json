@@ -10,7 +10,12 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/image_render/image_render.go",
-      "args": ["-t", "1"]
+      "args": [
+        "-t",
+        "1",
+        "-d",
+        "100"
+      ]
     }
   ]
 }

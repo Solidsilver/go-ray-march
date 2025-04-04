@@ -6,10 +6,16 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
+	"os"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	_ "net/http/pprof"
 
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
@@ -32,7 +38,6 @@ type Game struct {
 }
 
 func NewGame(opts renderer.RenderOpts) *Game {
-
 	height, width := getWindowSize(opts)
 	g := &Game{
 		offscreen:    ebiten.NewImage(opts.DimX, opts.DimY),
@@ -184,15 +189,30 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	defer profile.Start(profile.ProfilePath(".")).Stop()
+	defer profile.Start(profile.MemProfile).Stop()
 	resolution := screenresolution.GetPrimary()
 	defaultRes := fmt.Sprintf("%dx%d", resolution.Width, resolution.Height)
-	workersOpt := flag.Int("t", 4, "The number of concurrent jobs being processed")
+	workersOpt := flag.Int("t", runtime.NumCPU(), "The number of concurrent jobs being processed")
 	dimensionsOpt := flag.String("d", defaultRes, "The dimensions of the image to render")
 	fov := flag.Float64("fov", 20, "The field of view of the camera")
 	outDir := flag.String("o", "./rend_out_0", "The directory to output the image to")
 	scaling := flag.Int("s", 1, "Scale to render at")
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		fmt.Println("Writing CPU profile to: ", *cpuprofile)
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal()
+		}
+		pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
+	}
+	go func() {
+		http.ListenAndServe(":8080", nil)
+	}()
 
 	dims := strings.Split(*dimensionsOpt, "x")
 	dimX := dims[0]
@@ -228,6 +248,7 @@ func main() {
 	ebiten.SetScreenClearedEveryFrame(false)
 	ebiten.SetTPS(ebiten.SyncWithFPS)
 	ebiten.SetWindowTitle("Ray Marcher")
+
 	go game.renderer.Render2(rOps.Workers, game.renderWG)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
