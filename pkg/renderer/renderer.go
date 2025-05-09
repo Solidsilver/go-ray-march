@@ -313,13 +313,13 @@ func RayMarchWorkerLighting6(id int, workers int, renderer *Renderer, wg *sync.W
 		x := i / int64(renderer.camera.SizeY)
 		pt := Point{int(x), int(y)}
 		ray := renderer.camera.RayForPixel(pt)
-		// marchRslt := RayMarch(ray, renderer, false)
-		// pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
-		//  CalculateLighting2(marchRslt, pt, renderer)
+		marchRslt := RayMarch(ray, renderer, false)
+		pxColorVal := CalculateLighting2(marchRslt, pt, renderer)
+		// CalculateLighting2(marchRslt, pt, renderer)
 
-		marchRslt := RayMarchP(ray, renderer, false)
-		pxColorVal := CalculateLightingTest(marchRslt, pt, renderer)
-		// CalculateLightingTest(marchRslt, pt, renderer)
+		// marchRslt := RayMarchP(ray, renderer, false)
+		// pxColorVal := CalculateLightingTest(marchRslt, pt, renderer)
+		// // CalculateLightingTest(marchRslt, pt, renderer)
 		renderer.camera.Image.Set(pt.X, pt.Y, pxColorVal)
 	}
 }
@@ -482,7 +482,7 @@ func NewDefaultRenderScene(opts RenderOpts) *Renderer {
 
 	// cam := NewCameraFOV(vec3.Vec3{X: 0, Y: 0, Z: 15}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 	// cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
-	cam := NewCameraFOV(vec3.Vec3{X: -15, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
+	cam := NewCameraFOV(vec3.Vec3{X: -10, Y: 0, Z: 0}, opts.DimX, opts.DimY, opts.Fov, opts.OutPath)
 
 	// cam.up = vec3.UnitX()
 	// cam.Dir = vec3.UnitZ().Mult(-1)

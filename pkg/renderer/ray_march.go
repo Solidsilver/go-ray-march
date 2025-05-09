@@ -16,38 +16,29 @@ type MarchResult struct {
 }
 
 func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
-	scene := renderer.scene
 	totalDistTraveled := 0.0
 	curPos := ray.origin
 	totalMin := renderer.scene.options.trace.maxDist
 	var closest drawables.Drawable
 	steps := 0
 	minDistAvg := 0.0
-	maxTraceCubed := renderer.scene.options.trace.maxDist * renderer.scene.options.trace.maxDist //* MAXIMUM_TRACE_DISTANCE
+	maxTraceSquared := renderer.scene.options.trace.maxDist * renderer.scene.options.trace.maxDist //* MAXIMUM_TRACE_DISTANCE
 
+	// Step through scene
 	for totalDistTraveled < renderer.scene.options.trace.maxDist {
 		minDist := renderer.scene.options.trace.maxDist
-		for _, obj := range scene.Drawables {
-			dist := 0.0
-			if renderer.scene.options.trace.fastMath {
-				dist = obj.FastDist(curPos)
-			} else {
-				dist = obj.Dist(curPos)
-			}
-			// dist := obj.Dist(curPos)
+		// Get closest object
+		for _, obj := range renderer.scene.Drawables {
+			dist := obj.Dist(curPos)
 			if dist < minDist {
 				minDist = dist
 				closest = obj
 			}
 		}
 		if renderer.scene.options.shadows && showLight {
-			for _, obj := range scene.Lights {
-				dist := 0.0
-				if renderer.scene.options.trace.fastMath {
-					dist = obj.FastDist(curPos)
-				} else {
-					dist = obj.Dist(curPos)
-				}
+			// Get closest light
+			for _, obj := range renderer.scene.Lights {
+				dist := obj.Dist(curPos)
 				if dist < minDist {
 					minDist = dist
 					closest = obj
@@ -55,11 +46,13 @@ func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 			}
 		}
 
+		// Running average of distance to nearest object
 		oldAvg := minDistAvg
 		minDistAvg -= minDistAvg / 3
 		minDistAvg += minDist / 3
 		minDistSlope := minDistAvg - oldAvg
 
+		// Reached max number of trace steps (sanity check)
 		if steps == renderer.scene.options.trace.maxSteps {
 			return MarchResult{closest, curPos, renderer.scene.options.trace.maxSteps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
 		}
@@ -67,18 +60,19 @@ func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 		minHitDist := renderer.scene.options.trace.minHitDist
 		if renderer.scene.options.trace.LOD {
 			distFromCamera := curPos.Sub(renderer.camera.Pos).Norm()
-			minHitDist += (distFromCamera * distFromCamera /* * distFromCamera */ / maxTraceCubed * renderer.scene.options.trace.maxHitDist)
+			minHitDist += (distFromCamera * distFromCamera / maxTraceSquared * renderer.scene.options.trace.maxHitDist)
 		}
+		// if approaching drawable and close enough, treat as a "hit"
 		if minDistSlope < 0 && minDist < minHitDist {
-
 			retPos := curPos
 			if minDist < 0 {
-				// retPos = curPos.Add(ray.dir.Mult(minDist))
 				retPos = retPos.Sub(ray.dir.Mult(minHitDist))
 			}
 
 			return MarchResult{closest, retPos, steps, totalDistTraveled, minHitDist}
 		}
+
+		// Go 95% of the distance to the closest object
 		distP := minDist * 0.95
 
 		curPos = curPos.Add(ray.dir.Mult(distP))
@@ -87,12 +81,10 @@ func RayMarch(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 		totalDistTraveled += distP
 		if minDist < totalMin {
 			totalMin = minDist
-
 		}
 
 	}
 	return MarchResult{nil, curPos, steps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
-
 }
 
 func RayMarchP(ray Ray, renderer *Renderer, showLight bool) MarchResult {
@@ -185,7 +177,6 @@ func RayMarchP(ray Ray, renderer *Renderer, showLight bool) MarchResult {
 
 	}
 	return MarchResult{nil, *curPos, steps, totalDistTraveled, renderer.scene.options.trace.minHitDist}
-
 }
 
 func SurfaceNormal(hitRslt MarchResult, fast bool) vec3.Vec3 {
