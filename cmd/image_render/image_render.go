@@ -14,6 +14,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/Solidsilver/go-ray-march/cmd/internal/scenedefaults"
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 )
 
@@ -64,7 +65,7 @@ func main() {
 
 	log.Println("Rendering with options: ", rOps.String())
 
-	r := renderer.NewDefaultRenderScene(rOps)
+	r := scenedefaults.NewDefaultRenderScene(rOps)
 	// renderer.Render3(r, rOps.Workers)
 	startTime := time.Now()
 	r.RenderStatic(rOps.Workers, &sync.WaitGroup{})

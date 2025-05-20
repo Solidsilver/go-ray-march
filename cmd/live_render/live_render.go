@@ -17,6 +17,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/Solidsilver/go-ray-march/cmd/internal/scenedefaults"
 	"github.com/Solidsilver/go-ray-march/pkg/drawables"
 	"github.com/Solidsilver/go-ray-march/pkg/renderer"
 	"github.com/fstanis/screenresolution"
@@ -41,7 +42,7 @@ func NewGame(opts renderer.RenderOpts) *Game {
 	height, width := getWindowSize(opts)
 	g := &Game{
 		offscreen:    ebiten.NewImage(opts.DimX, opts.DimY),
-		renderer:     renderer.NewDefaultRenderScene(opts),
+		renderer:     scenedefaults.NewDefaultRenderScene(opts),
 		windowWidth:  width,
 		windowHeight: height,
 		renderWG:     &sync.WaitGroup{},
