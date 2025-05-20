@@ -77,7 +77,7 @@ func (lopt LightingOpts) WithShadows(setShadows bool) LightingOpts {
 
 func DefaultLightingOpts() LightingOpts {
 	maxTraceDist := 5000.0
-	minHitDist := 0.0005
+	minHitDist := 0.001
 	lopts := LightingOpts{
 		shadows: true,
 		vignette: VignetteOpts{

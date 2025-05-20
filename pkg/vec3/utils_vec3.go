@@ -104,8 +104,9 @@ func Vec3ToRGBA(vec Vec3, a uint8) color.RGBA {
 // Mod returns the vector with each component
 // modded by the given number
 func (v Vec3) Mod(num float64) Vec3 {
-	v.X = math.Mod(v.X, num)
-	v.Y = math.Mod(v.Y, num)
-	v.Z = math.Mod(v.Z, num)
-	return v
+	return Vec3{
+		X: math.Mod(v.X, num),
+		Y: math.Mod(v.Y, num),
+		Z: math.Mod(v.Z, num),
+	}
 }

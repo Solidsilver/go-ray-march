@@ -27,46 +27,51 @@ func (v1 Vec3) Sub(v2 Vec3) Vec3 {
 // Mult multiplies the vector by the given scalar
 // and returns the result
 func (v Vec3) Plus(num float64) Vec3 {
-	v.X += num
-	v.Y += num
-	v.Z += num
-	return v
+	return Vec3{
+		X: v.X + num,
+		Y: v.Y + num,
+		Z: v.Z + num,
+	}
 }
 
 // Sub subtracts the vector by the given scalar
 // and returns the resultant vector
 func (v Vec3) Minus(num float64) Vec3 {
-	v.X -= num
-	v.Y -= num
-	v.Z -= num
-	return v
+	return Vec3{
+		X: v.X - num,
+		Y: v.Y - num,
+		Z: v.Z - num,
+	}
 }
 
 // Multiplies the vector by the given scalar
 // and returns the resultant vector
 func (v Vec3) Mult(num float64) Vec3 {
-	v.X = v.X * num
-	v.Y = v.Y * num
-	v.Z = v.Z * num
-	return v
+	return Vec3{
+		X: v.X * num,
+		Y: v.Y * num,
+		Z: v.Z * num,
+	}
 }
 
 // MultComp multiplies each component
 // of the vectors together and returns the result
 func (v1 Vec3) MultComp(v2 Vec3) Vec3 {
-	v1.X *= v2.X
-	v1.Y *= v2.Y
-	v1.Z *= v2.Z
-	return v1
+	return Vec3{
+		X: v1.X * v2.X,
+		Y: v1.Y * v2.Y,
+		Z: v1.Z * v2.Z,
+	}
 }
 
 // Div divides each component of the vector by the given scalar
 // and returns the resultant vector
 func (v Vec3) Div(num float64) Vec3 {
-	v.X = v.X / num
-	v.Y = v.Y / num
-	v.Z = v.Z / num
-	return v
+	return Vec3{
+		X: v.X / num,
+		Y: v.Y / num,
+		Z: v.Z / num,
+	}
 }
 
 // Dot returns the dot product of the two vectors
@@ -102,8 +107,9 @@ func (v Vec3) ToUnit() Vec3 {
 
 // Calculates the square root of the vector component-wise
 func (v Vec3) Sqrt() Vec3 {
-	v.X = math.Sqrt(v.X)
-	v.Y = math.Sqrt(v.Y)
-	v.Z = math.Sqrt(v.Z)
-	return v
+	return Vec3{
+		X: math.Sqrt(v.X),
+		Y: math.Sqrt(v.Y),
+		Z: math.Sqrt(v.Z),
+	}
 }

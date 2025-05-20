@@ -94,12 +94,6 @@ func (c *Camera) FlushToDisk() {
 
 func (c *Camera) Reset() {
 	c.Image = image.NewRGBA(image.Rect(0, 0, c.SizeX, c.SizeY))
-	// make the entire image black
-	// for x := 0; x < c.SizeX; x++ {
-	// 	for y := 0; y < c.SizeY; y++ {
-	// 		c.Image.Set(x, y, color.RGBA{0, 0, 0, 0})
-	// 	}
-	// }
 }
 
 func (c *Camera) GetBytes() ([]byte, error) {

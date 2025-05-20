@@ -80,7 +80,7 @@ func (b MandelBulb) FastDist(pt vec3.Vec3) float64 {
 	dr := 1.0
 	r := 0.0
 
-	for i := 0; i < b.Iterations; i++ {
+	for range b.Iterations {
 		r = z.Norm()
 		if r > b.Bailout {
 			break
@@ -116,6 +116,7 @@ func (b MandelBulb) ColorVec() vec3.Vec3 {
 func (b MandelBulb) Pos() vec3.Vec3 {
 	return b.pos
 }
+
 func (b MandelBulb) ID() int64 {
 	return b.id
 }
